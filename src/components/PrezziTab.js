@@ -1,6 +1,50 @@
 import apiFetch from '@wordpress/api-fetch';
-import { Button, CheckboxControl, Notice, SelectControl, Spinner, TextControl } from '@wordpress/components';
+import {
+	Button,
+	CheckboxControl,
+	Flex,
+	FlexBlock,
+	FlexItem,
+	FormTokenField,
+	Notice,
+	SelectControl,
+	Spinner,
+	TextControl,
+} from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
+
+/**
+ * La Store API restituisce i nomi prodotto con entity HTML (es. "&#8211;"
+ * per i trattini lunghi) non decodificate.
+ *
+ * @param {string} testo Testo con eventuali entity HTML.
+ */
+function decodificaEntityHtml( testo ) {
+	const area = document.createElement( 'textarea' );
+	area.innerHTML = testo;
+	return area.value;
+}
+
+/**
+ * Etichetta univoca per i token del menu prodotti: il nome da solo
+ * potrebbe ripetersi tra prodotti diversi, l'id in coda lo esclude.
+ *
+ * @param {Object} prodotto Prodotto dalla Store API ({ id, name }).
+ */
+function etichettaProdotto( prodotto ) {
+	return `${ decodificaEntityHtml( prodotto.name ) } (#${ prodotto.id })`;
+}
+
+/**
+ * Inverso di etichettaProdotto(): estrae l'id numerico da un token
+ * "Nome (#123)" selezionato nel FormTokenField.
+ *
+ * @param {string} etichetta Token come mostrato/selezionato nel campo.
+ */
+function idDaEtichetta( etichetta ) {
+	const corrispondenza = /\(#(\d+)\)\s*$/.exec( etichetta );
+	return corrispondenza ? parseInt( corrispondenza[ 1 ], 10 ) : null;
+}
 
 /**
  * Prezzi in blocco per categoria: anteprima via REST (nessuna scrittura),
@@ -11,6 +55,9 @@ import { useEffect, useState } from '@wordpress/element';
 export default function PrezziTab() {
 	const [ categorie, setCategorie ] = useState( null );
 	const [ categoria, setCategoria ] = useState( '' );
+	const [ prodottiCategoria, setProdottiCategoria ] = useState( [] );
+	const [ caricamentoProdotti, setCaricamentoProdotti ] = useState( false );
+	const [ prodottiScelti, setProdottiScelti ] = useState( [] );
 	const [ percentuale, setPercentuale ] = useState( '' );
 	const [ delta, setDelta ] = useState( '' );
 	const [ anteprima, setAnteprima ] = useState( null );
@@ -27,6 +74,23 @@ export default function PrezziTab() {
 			.then( ( risposta ) => setCategorie( risposta.filter( ( cat ) => cat.count > 0 ) ) )
 			.catch( () => setCategorie( [] ) );
 	}, [] );
+
+	// Prodotti della categoria scelta, per poterne richiamare e selezionare
+	// solo alcuni: Store API di WooCommerce, pubblica e già filtrata sul
+	// catalogo visibile, nessun nuovo endpoint necessario.
+	useEffect( () => {
+		setProdottiScelti( [] );
+		if ( '' === categoria ) {
+			setProdottiCategoria( [] );
+			return;
+		}
+
+		setCaricamentoProdotti( true );
+		apiFetch( { path: `/wc/store/v1/products?category=${ encodeURIComponent( categoria ) }&per_page=100` } )
+			.then( setProdottiCategoria )
+			.catch( () => setProdottiCategoria( [] ) )
+			.finally( () => setCaricamentoProdotti( false ) );
+	}, [ categoria ] );
 
 	const calcola = () => {
 		if ( '' === categoria || ( '' === percentuale ) === ( '' === delta ) ) {
@@ -48,6 +112,18 @@ export default function PrezziTab() {
 
 		apiFetch( { path: `/push-contempt/v1/prezzi/calcola?${ parametri.toString() }` } )
 			.then( ( risposta ) => {
+				// Se l'utente ha scelto solo alcuni prodotti dal menu, l'anteprima
+				// si restringe a quelli (nessuna modifica lato REST: filtro lato client).
+				if ( prodottiScelti.length > 0 ) {
+					const idScelti = new Set( prodottiScelti.map( ( token ) => idDaEtichetta( token ) ) );
+					risposta = {
+						...risposta,
+						aggiornamenti: risposta.aggiornamenti.filter( ( riga ) => idScelti.has( riga.id ) ),
+						prodotti_variabili_esclusi: risposta.prodotti_variabili_esclusi.filter( ( riga ) =>
+							idScelti.has( riga.id )
+						),
+					};
+				}
 				setAnteprima( risposta );
 				// Di default tutti i prodotti proposti sono selezionati per lo sconto.
 				setSelezionati( new Set( risposta.aggiornamenti.map( ( riga ) => riga.id ) ) );
@@ -93,41 +169,75 @@ export default function PrezziTab() {
 
 	return (
 		<div style={ { marginTop: '16px' } }>
-			<div style={ { display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '16px', flexWrap: 'wrap' } }>
-				<SelectControl
-					label="Categoria"
-					value={ categoria }
-					options={ [
-						{ label: null === categorie ? 'Caricamento…' : 'Seleziona una categoria', value: '' },
-						...( categorie || [] ).map( ( cat ) => ( {
-							label: `${ cat.name } (${ cat.count })`,
-							value: cat.slug,
-						} ) ),
-					] }
-					onChange={ setCategoria }
-				/>
-				<TextControl
-					label="Percentuale (es. 10 o -10)"
-					type="number"
-					value={ percentuale }
-					onChange={ ( valore ) => {
-						setPercentuale( valore );
-						setDelta( '' );
-					} }
-				/>
-				<TextControl
-					label="Delta fisso (es. 5 o -5)"
-					type="number"
-					value={ delta }
-					onChange={ ( valore ) => {
-						setDelta( valore );
-						setPercentuale( '' );
-					} }
-				/>
-				<Button variant="primary" onClick={ calcola } isBusy={ caricamento }>
-					Calcola anteprima
-				</Button>
-			</div>
+			<Flex align="flex-end" wrap gap={ 3 } style={ { marginBottom: '16px' } }>
+				<FlexItem style={ { minWidth: '200px' } }>
+					<SelectControl
+						label="Categoria"
+						value={ categoria }
+						options={ [
+							{ label: null === categorie ? 'Caricamento…' : 'Seleziona una categoria', value: '' },
+							...( categorie || [] ).map( ( cat ) => ( {
+								label: `${ cat.name } (${ cat.count })`,
+								value: cat.slug,
+							} ) ),
+						] }
+						onChange={ setCategoria }
+						__next40pxDefaultSize
+					/>
+				</FlexItem>
+				<FlexBlock style={ { minWidth: '280px' } }>
+					<FormTokenField
+						label="Prodotti"
+						value={ prodottiScelti }
+						suggestions={ prodottiCategoria.map( etichettaProdotto ) }
+						onChange={ ( token ) => {
+							// Solo prodotti scelti dai suggerimenti: niente token liberi
+							// che non corrisponderebbero a nessun id.
+							const valide = prodottiCategoria.map( etichettaProdotto );
+							setProdottiScelti( token.filter( ( t ) => valide.includes( t ) ) );
+						} }
+						disabled={ '' === categoria }
+						placeholder={
+							'' === categoria
+								? 'Scegli prima una categoria'
+								: caricamentoProdotti
+								? 'Caricamento prodotti…'
+								: 'Vuoto = tutta la categoria'
+						}
+						__experimentalExpandOnFocus
+						__next40pxDefaultSize
+					/>
+				</FlexBlock>
+				<FlexItem style={ { minWidth: '140px' } }>
+					<TextControl
+						label="Percentuale (es. 10 o -10)"
+						type="number"
+						value={ percentuale }
+						onChange={ ( valore ) => {
+							setPercentuale( valore );
+							setDelta( '' );
+						} }
+						__next40pxDefaultSize
+					/>
+				</FlexItem>
+				<FlexItem style={ { minWidth: '140px' } }>
+					<TextControl
+						label="Delta fisso (es. 5 o -5)"
+						type="number"
+						value={ delta }
+						onChange={ ( valore ) => {
+							setDelta( valore );
+							setPercentuale( '' );
+						} }
+						__next40pxDefaultSize
+					/>
+				</FlexItem>
+				<FlexItem>
+					<Button variant="primary" onClick={ calcola } isBusy={ caricamento }>
+						Calcola anteprima
+					</Button>
+				</FlexItem>
+			</Flex>
 
 			{ errore && (
 				<Notice status="error" isDismissible={ false }>
