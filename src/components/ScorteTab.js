@@ -30,6 +30,11 @@ export default function ScorteTab() {
 
 	return (
 		<div style={ { marginTop: '16px' } }>
+			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
+				Elenca i prodotti pubblicati esauriti o con scorte residue pari o sotto la soglia indicata (i prodotti
+				senza gestione scorte attiva compaiono solo se risultano esauriti). Cambia la soglia e premi "Aggiorna"
+				per rivedere l'elenco; clicca su un prodotto per aprirne la scheda di modifica.
+			</p>
 			<div style={ { display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '16px' } }>
 				<TextControl label="Soglia scorte" type="number" value={ soglia } onChange={ setSoglia } />
 				<Button variant="primary" onClick={ carica } isBusy={ caricamento }>

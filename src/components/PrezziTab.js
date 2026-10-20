@@ -12,6 +12,7 @@ import {
 	TextControl,
 } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
+import LinkProdotto from './LinkProdotto';
 
 /**
  * La Store API restituisce i nomi prodotto con entity HTML (es. "&#8211;"
@@ -304,7 +305,9 @@ export default function PrezziTab() {
 													onChange={ ( selezionato ) => alternaSelezione( riga.id, selezionato ) }
 												/>
 											</td>
-											<td>{ riga.titolo }</td>
+											<td>
+												<LinkProdotto id={ riga.id }>{ riga.titolo }</LinkProdotto>
+											</td>
 											<td>{ riga.prezzo_regolare_attuale }</td>
 											<td>{ riga.prezzo_regolare_nuovo }</td>
 										</tr>

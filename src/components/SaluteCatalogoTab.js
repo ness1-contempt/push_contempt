@@ -1,6 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
+import LinkProdotto from './LinkProdotto';
 
 /**
  * Salute catalogo: chiama direttamente la REST API del plugin, nessuna AI.
@@ -29,6 +30,11 @@ export default function SaluteCatalogoTab() {
 
 	return (
 		<div style={ { marginTop: '16px' } }>
+			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
+				Elenca i prodotti pubblicati con almeno un problema: nessuna immagine, nessuna categoria, prezzo mancante o
+				descrizione troppo corta rispetto alla soglia indicata. Clicca su un prodotto per aprirne la scheda di
+				modifica e sistemarlo.
+			</p>
 			<div style={ { display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '16px' } }>
 				<TextControl
 					label="Soglia minima descrizione (caratteri)"
@@ -62,7 +68,9 @@ export default function SaluteCatalogoTab() {
 					<tbody>
 						{ prodotti.map( ( prodotto ) => (
 							<tr key={ prodotto.id }>
-								<td>{ prodotto.titolo }</td>
+								<td>
+									<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
+								</td>
 								<td>{ prodotto.problemi.join( ', ' ) }</td>
 							</tr>
 						) ) }

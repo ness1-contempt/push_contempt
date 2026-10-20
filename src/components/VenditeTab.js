@@ -1,6 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, SelectControl, Spinner } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
+import LinkProdotto from './LinkProdotto';
 
 const PERIODI = [
 	{ label: 'Ultimo mese', value: '1_mese' },
@@ -34,6 +35,11 @@ export default function VenditeTab() {
 
 	return (
 		<div style={ { marginTop: '16px' } }>
+			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
+				Mostra, per il periodo scelto, i prodotti più venduti (quantità e ricavo netto sugli ordini completati o in
+				elaborazione) e quelli mai venduti - utile per capire cosa spingere e cosa magari togliere dal catalogo.
+				Clicca su un prodotto per aprirne la scheda di modifica.
+			</p>
 			<div style={ { display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '16px' } }>
 				<SelectControl label="Periodo" value={ periodo } options={ PERIODI } onChange={ setPeriodo } />
 				<Button variant="primary" onClick={ carica } isBusy={ caricamento }>
@@ -69,7 +75,9 @@ export default function VenditeTab() {
 							<tbody>
 								{ dati.piu_venduti.map( ( riga ) => (
 									<tr key={ riga.id }>
-										<td>{ riga.titolo }</td>
+										<td>
+											<LinkProdotto id={ riga.id }>{ riga.titolo }</LinkProdotto>
+										</td>
 										<td>{ riga.quantita_venduta }</td>
 										<td>{ riga.ricavo_netto }</td>
 									</tr>
@@ -82,7 +90,11 @@ export default function VenditeTab() {
 					{ 0 === dati.mai_venduti.length && <p>Tutti i prodotti pubblicati hanno almeno una vendita nel periodo.</p> }
 					{ dati.mai_venduti.length > 0 && (
 						<ul>
-							{ dati.mai_venduti.map( ( prodotto ) => <li key={ prodotto.id }>{ prodotto.titolo }</li> ) }
+							{ dati.mai_venduti.map( ( prodotto ) => (
+							<li key={ prodotto.id }>
+								<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
+							</li>
+						) ) }
 						</ul>
 					) }
 				</>

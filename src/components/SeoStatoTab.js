@@ -1,6 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, Spinner } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
+import LinkProdotto from './LinkProdotto';
 
 /**
  * Vista d'insieme SEO: chiama direttamente la REST API del plugin, nessuna
@@ -28,9 +29,13 @@ export default function SeoStatoTab() {
 
 	return (
 		<div style={ { marginTop: '16px' } }>
+			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
+				Per ogni prodotto pubblicato mostra se titolo SEO, meta description e parola chiave focus (impostati da
+				Yoast) sono presenti e quanto sono lunghi - utile per capire da dove iniziare un'ottimizzazione. Clicca su
+				un prodotto per aprirne la scheda di modifica e sistemare i campi SEO.
+			</p>
 			<Notice status="info" isDismissible={ false }>
-				Vista d'insieme per capire da dove iniziare. La scrittura SEO assistita per singolo prodotto richiede una
-				sessione AI collegata - in arrivo.
+				La scrittura SEO assistita per singolo prodotto richiede una sessione AI collegata - in arrivo.
 			</Notice>
 
 			<div style={ { margin: '16px 0' } }>
@@ -60,7 +65,9 @@ export default function SeoStatoTab() {
 					<tbody>
 						{ prodotti.map( ( prodotto ) => (
 							<tr key={ prodotto.id }>
-								<td>{ prodotto.titolo }</td>
+								<td>
+									<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
+								</td>
 								<td>
 									{ prodotto.titolo_seo ? `${ prodotto.lunghezza_titolo_seo } caratteri` : (
 										<span style={ { color: '#b32d2e' } }>Mancante</span>
