@@ -1,6 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
+import LinkProdotto from './LinkProdotto';
 
 /**
  * Alert scorte: chiama direttamente la REST API del plugin, nessuna AI.
@@ -59,7 +60,9 @@ export default function ScorteTab() {
 					<tbody>
 						{ prodotti.map( ( prodotto ) => (
 							<tr key={ prodotto.id }>
-								<td>{ prodotto.titolo }</td>
+								<td>
+									<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
+								</td>
 								<td>{ prodotto.sku || '—' }</td>
 								<td>{ null === prodotto.scorte ? '—' : prodotto.scorte }</td>
 								<td>{ prodotto.esaurito ? 'Esaurito' : 'Sotto soglia' }</td>
