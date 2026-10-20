@@ -205,6 +205,7 @@ export default function PrezziTab() {
 								: 'Vuoto = tutta la categoria'
 						}
 						__experimentalExpandOnFocus
+						__experimentalShowHowTo={ false }
 						__next40pxDefaultSize
 					/>
 				</FlexBlock>
