@@ -169,6 +169,12 @@ export default function PrezziTab() {
 
 	return (
 		<div style={ { marginTop: '16px' } }>
+			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
+				Scegli una categoria, poi eventualmente uno o più prodotti specifici se non vuoi scontarli tutti, e indica
+				di quanto cambiare il prezzo (percentuale, es. "10" per +10%, oppure un importo fisso in euro, es. "-5").
+				"Calcola anteprima" mostra solo i nuovi prezzi senza scrivere nulla: puoi togliere la spunta ai prodotti
+				che non vuoi toccare prima di premere "Applica".
+			</p>
 			<Flex align="flex-end" wrap gap={ 3 } style={ { marginBottom: '16px' } }>
 				<FlexItem style={ { minWidth: '200px' } }>
 					<SelectControl
