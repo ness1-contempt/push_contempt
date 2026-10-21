@@ -175,7 +175,7 @@ export default function PrezziTab() {
 				"Calcola anteprima" mostra solo i nuovi prezzi senza scrivere nulla: puoi togliere la spunta ai prodotti
 				che non vuoi toccare prima di premere "Applica".
 			</p>
-			<Flex align="flex-end" wrap gap={ 3 } style={ { marginBottom: '16px' } }>
+			<Flex justify="flex-start" align="flex-end" wrap gap={ 3 } style={ { marginBottom: '16px' } }>
 				<FlexItem style={ { minWidth: '200px' } }>
 					<SelectControl
 						label="Categoria"
@@ -222,7 +222,7 @@ export default function PrezziTab() {
 				/>
 			</div>
 
-			<Flex align="flex-end" wrap gap={ 3 } style={ { marginBottom: '16px' } }>
+			<Flex justify="flex-start" align="flex-end" wrap gap={ 3 } style={ { marginBottom: '16px' } }>
 				<FlexItem style={ { minWidth: '140px' } }>
 					<TextControl
 						label="Percentuale (es. 10 o -10)"
