@@ -7,7 +7,11 @@ import { useEffect, useState } from '@wordpress/element';
  * prima persona (Carica prodotti, SEO). Il bottone torna a "Copia messaggio"
  * ogni volta che il testo cambia (es. cambio di prodotto selezionato).
  */
-export default function MessaggioProntoAI( { testo, etichetta = 'Messaggio pronto per il tuo assistente AI:' } ) {
+export default function MessaggioProntoAI( {
+	testo,
+	etichetta = 'Messaggio pronto per il tuo assistente AI:',
+	etichettaBottone = 'Copia messaggio',
+} ) {
 	const [ copiato, setCopiato ] = useState( false );
 
 	useEffect( () => {
@@ -35,7 +39,7 @@ export default function MessaggioProntoAI( { testo, etichetta = 'Messaggio pront
 				{ testo }
 			</pre>
 			<Button variant="primary" onClick={ copia }>
-				{ copiato ? 'Copiato ✓' : 'Copia messaggio' }
+				{ copiato ? 'Copiato ✓' : etichettaBottone }
 			</Button>
 		</div>
 	);
