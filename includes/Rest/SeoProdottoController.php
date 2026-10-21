@@ -143,7 +143,7 @@ class SeoProdottoController {
 
 		$nuovi_valori = array();
 		foreach ( self::CAMPI_YOAST as $campo => $meta_key ) {
-			$valore                 = $request->get_param( $campo );
+			$valore                 = sanitize_text_field( $request->get_param( $campo ) );
 			$nuovi_valori[ $campo ] = $valore;
 			update_post_meta( $prodotto_id, $meta_key, $valore );
 		}
