@@ -40,9 +40,13 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 			<StatoCollegamentoAI onNavigate={ onNavigate } />
 
 			<ol style={ { maxWidth: '640px', marginBottom: '16px', color: '#1e1e1e' } }>
-				<li>Apri il terminale dove hai il tuo assistente AI collegato (con push_contempt_mcp configurato).</li>
-				<li>Trascina lì la cartella dei prodotti: comparirà il percorso completo.</li>
-				<li>Copia quel percorso e incollalo nel campo qui sotto.</li>
+				<li>Trova la cartella dei prodotti sul tuo computer.</li>
+				<li>
+					Copiane il percorso completo: su Windows, Maiusc + click destro sulla cartella → "Copia come
+					percorso"; su Mac, Option + click destro → "Copia [cartella] come nome percorso" (oppure
+					trascinala su un terminale, se ne hai uno aperto).
+				</li>
+				<li>Incolla quel percorso nel campo qui sotto.</li>
 			</ol>
 
 			<div style={ { maxWidth: '640px', marginBottom: '16px' } }>
