@@ -34,6 +34,7 @@ add_action(
 		\PushContempt\Rest\SaluteCatalogoController::register();
 		\PushContempt\Rest\PrezziController::register();
 		\PushContempt\Rest\SeoStatoController::register();
+		\PushContempt\Rest\CredenzialiController::register();
 	}
 );
 

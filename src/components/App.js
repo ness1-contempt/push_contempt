@@ -1,5 +1,6 @@
 import { TabPanel } from '@wordpress/components';
 import { useState } from '@wordpress/element';
+import ImpostazioniTab from './ImpostazioniTab';
 import PanoramicaTab from './PanoramicaTab';
 import PlaceholderTab from './PlaceholderTab';
 import PrezziTab from './PrezziTab';
@@ -10,6 +11,7 @@ import VenditeTab from './VenditeTab';
 
 const TABS = [
 	{ name: 'panoramica', title: 'Panoramica' },
+	{ name: 'impostazioni', title: 'Impostazioni' },
 	{ name: 'carica-prodotti', title: 'Carica prodotti' },
 	{ name: 'seo', title: 'SEO' },
 	{ name: 'prezzi', title: 'Prezzi' },
@@ -22,6 +24,7 @@ const TABS = [
 // anche senza sessione AI collegata.
 const CONTENUTI = {
 	panoramica: PanoramicaTab,
+	impostazioni: ImpostazioniTab,
 	seo: SeoStatoTab,
 	prezzi: PrezziTab,
 	scorte: ScorteTab,
