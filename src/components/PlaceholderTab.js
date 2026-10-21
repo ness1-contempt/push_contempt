@@ -1,8 +1,10 @@
 import { Notice } from '@wordpress/components';
 
 /**
- * Segnaposto per le tab non ancora costruite (o che richiedono una sessione
- * AI collegata, decisione sul "ponte" ancora da prendere).
+ * Segnaposto generico per una tab senza contenuto registrato in
+ * App.js (CONTENUTI) - nessuna delle 8 tab attuali lo usa, resta come
+ * fallback di sicurezza per una futura tab aggiunta prima di avere
+ * contenuto reale pronto.
  *
  * Usa il componente Notice di @wordpress/components, non un <div
  * className="notice">: wp-admin/js/common.js sposta fisicamente nel DOM
