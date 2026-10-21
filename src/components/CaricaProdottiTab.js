@@ -46,7 +46,7 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 				Il caricamento non avviene da qui: serve leggere file sul tuo computer e scrivere i testi con
 				l'AI, cose che un browser non può fare. Lo fa il tuo assistente AI - Claude Code, Cursor, Windsurf
 				e simili (con push_contempt_mcp configurato - vedi la tab Impostazioni se non l'hai ancora fatto).
-				Qui sotto prepari il percorso e il messaggio da incollargli.
+				Qui sotto prepari il percorso e il messaggio da incollare nella chat con il tuo assistente AI.
 			</p>
 
 			{ ! stato && ! erroreStato && <Spinner /> }
