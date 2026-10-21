@@ -1,5 +1,6 @@
 import { TabPanel } from '@wordpress/components';
 import { useState } from '@wordpress/element';
+import CaricaProdottiTab from './CaricaProdottiTab';
 import ImpostazioniTab from './ImpostazioniTab';
 import PanoramicaTab from './PanoramicaTab';
 import PlaceholderTab from './PlaceholderTab';
@@ -25,15 +26,13 @@ const TABS = [
 const CONTENUTI = {
 	panoramica: PanoramicaTab,
 	impostazioni: ImpostazioniTab,
+	'carica-prodotti': CaricaProdottiTab,
 	seo: SeoStatoTab,
 	prezzi: PrezziTab,
 	scorte: ScorteTab,
 	vendite: VenditeTab,
 	'salute-catalogo': SaluteCatalogoTab,
 };
-
-// Tab che richiedono una sessione AI collegata (il "ponte", non ancora deciso).
-const RICHIEDE_AGENTE = [ 'carica-prodotti' ];
 
 export default function App() {
 	// Tab controllata (non solo "initialTabName") per permettere ai riquadri
@@ -54,9 +53,6 @@ function Contenuto( { nomeTab, onNavigate } ) {
 	const Tab = CONTENUTI[ nomeTab ];
 	if ( Tab ) {
 		return <Tab onNavigate={ onNavigate } />;
-	}
-	if ( RICHIEDE_AGENTE.includes( nomeTab ) ) {
-		return <PlaceholderTab messaggio="Richiede una sessione AI collegata - in arrivo." />;
 	}
 	return <PlaceholderTab messaggio="In arrivo." />;
 }

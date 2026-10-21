@@ -32,18 +32,62 @@ class CredenzialiController {
 			'push-contempt/v1',
 			'/credenziali',
 			array(
-				'methods'             => 'POST',
-				'callback'            => array( self::class, 'handle' ),
-				'permission_callback' => array( self::class, 'permission' ),
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( self::class, 'handle_stato' ),
+					'permission_callback' => array( self::class, 'permission' ),
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( self::class, 'handle' ),
+					'permission_callback' => array( self::class, 'permission' ),
+				),
 			)
 		);
 	}
 
 	/**
-	 * Solo chi gestisce il negozio puo' generare credenziali di collegamento.
+	 * Solo chi gestisce il negozio puo' generare/leggere le credenziali di collegamento.
 	 */
 	public static function permission(): bool {
 		return current_user_can( 'manage_woocommerce' );
+	}
+
+	/**
+	 * Stato della Application Password push_contempt_mcp per l'utente corrente,
+	 * senza crearne/rigenerarne una: usato dalla tab "Carica prodotti" per
+	 * mostrare se il bridge si e' gia' collegato almeno una volta.
+	 */
+	public static function handle_stato(): WP_REST_Response {
+		$voce = self::trova_voce_esistente( get_current_user_id() );
+
+		if ( null === $voce ) {
+			return new WP_REST_Response( array( 'esiste' => false ), 200 );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'esiste'          => true,
+				'creato'          => $voce['created'],
+				'ultimo_utilizzo' => empty( $voce['last_used'] ) ? null : $voce['last_used'],
+				'ultimo_ip'       => empty( $voce['last_ip'] ) ? null : $voce['last_ip'],
+			),
+			200
+		);
+	}
+
+	/**
+	 * Voce esistente (se c'e') della Application Password push_contempt_mcp per l'utente dato.
+	 *
+	 * @param int $user_id ID dell'utente di cui controllare le Application Password.
+	 */
+	private static function trova_voce_esistente( int $user_id ): ?array {
+		foreach ( WP_Application_Passwords::get_user_application_passwords( $user_id ) as $voce ) {
+			if ( self::NOME_APP_PASSWORD === $voce['name'] ) {
+				return $voce;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -61,13 +105,12 @@ class CredenzialiController {
 
 		$user_id = get_current_user_id();
 
-		// Rigenerazione pulita: elimina le credenziali push_contempt_mcp create
+		// Rigenerazione pulita: elimina la credenziale push_contempt_mcp creata
 		// in precedenza, cosi' il bottone "Genera" funziona anche da "Rigenera"
 		// senza accumulare voci inutilizzate nel profilo dell'utente.
-		foreach ( WP_Application_Passwords::get_user_application_passwords( $user_id ) as $esistente ) {
-			if ( self::NOME_APP_PASSWORD === $esistente['name'] ) {
-				WP_Application_Passwords::delete_application_password( $user_id, $esistente['uuid'] );
-			}
+		$esistente = self::trova_voce_esistente( $user_id );
+		if ( null !== $esistente ) {
+			WP_Application_Passwords::delete_application_password( $user_id, $esistente['uuid'] );
 		}
 
 		$risultato = WP_Application_Passwords::create_new_application_password(
