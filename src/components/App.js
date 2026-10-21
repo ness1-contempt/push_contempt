@@ -1,4 +1,6 @@
 import { TabPanel } from '@wordpress/components';
+import { useState } from '@wordpress/element';
+import PanoramicaTab from './PanoramicaTab';
 import PlaceholderTab from './PlaceholderTab';
 import PrezziTab from './PrezziTab';
 import SaluteCatalogoTab from './SaluteCatalogoTab';
@@ -19,6 +21,7 @@ const TABS = [
 // Tab che chiamano direttamente la REST API del plugin, sempre disponibili
 // anche senza sessione AI collegata.
 const CONTENUTI = {
+	panoramica: PanoramicaTab,
 	seo: SeoStatoTab,
 	prezzi: PrezziTab,
 	scorte: ScorteTab,
@@ -30,17 +33,24 @@ const CONTENUTI = {
 const RICHIEDE_AGENTE = [ 'carica-prodotti' ];
 
 export default function App() {
+	// Tab controllata (non solo "initialTabName") per permettere ai riquadri
+	// della Panoramica di saltare direttamente a una tab di dettaglio; il
+	// cambio di "key" forza TabPanel a ripartire dalla nuova tab attiva.
+	const [ tabAttiva, setTabAttiva ] = useState( 'panoramica' );
+
 	return (
 		<div className="push-contempt-app">
-			<TabPanel tabs={ TABS }>{ ( tab ) => <Contenuto nomeTab={ tab.name } /> }</TabPanel>
+			<TabPanel key={ tabAttiva } tabs={ TABS } initialTabName={ tabAttiva } onSelect={ setTabAttiva }>
+				{ ( tab ) => <Contenuto nomeTab={ tab.name } onNavigate={ setTabAttiva } /> }
+			</TabPanel>
 		</div>
 	);
 }
 
-function Contenuto( { nomeTab } ) {
+function Contenuto( { nomeTab, onNavigate } ) {
 	const Tab = CONTENUTI[ nomeTab ];
 	if ( Tab ) {
-		return <Tab />;
+		return <Tab onNavigate={ onNavigate } />;
 	}
 	if ( RICHIEDE_AGENTE.includes( nomeTab ) ) {
 		return <PlaceholderTab messaggio="Richiede una sessione AI collegata - in arrivo." />;
