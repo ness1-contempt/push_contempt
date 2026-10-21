@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installa Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Prepara la cartella del plugin
+        run: |
+          mkdir -p dist/push_contempt
+          cp -r push-contempt.php includes build LICENSE README.md dist/push_contempt/
+
+      - name: Crea lo zip
+        run: |
+          cd dist
+          zip -r push_contempt.zip push_contempt
+
+      - name: Pubblica la release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/push_contempt.zip

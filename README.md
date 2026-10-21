@@ -21,10 +21,22 @@ paga né gestisce nessuna AI lato server.
   description, parola chiave focus) abbiano effetto reale in SERP — senza
   Yoast il plugin funziona comunque, solo quei campi restano inutilizzati
 
-## Installazione (da sorgente)
+## Installazione
 
-Non è ancora pubblicato come pacchetto installabile da wp-admin: va clonato
-dentro `wp-content/plugins/` e compilato.
+### Opzione A — da wp-admin, senza terminale (consigliata per un sito già in produzione)
+
+Dalla pagina **Releases** di questo repo scarica lo zip dell'ultima
+versione (`push_contempt.zip`, allegato automaticamente a ogni release —
+già compilato, pronto all'uso). Poi wp-admin → Plugin → Aggiungi nuovo →
+Carica plugin → seleziona lo zip → Installa → Attiva.
+
+**Non funziona con il bottone "Code → Download ZIP"** della pagina
+principale del repo: quello scarica il codice sorgente, che non contiene
+`build/` (il JS compilato, ignorato da git) — il plugin si attiverebbe ma
+la sua pagina di amministrazione resterebbe vuota. Va preso lo zip dalla
+pagina Releases.
+
+### Opzione B — da sorgente (per sviluppo, o se non ci sono ancora release)
 
 ```sh
 cd wp-content/plugins
