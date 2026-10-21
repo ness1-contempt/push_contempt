@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installa PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer
+
+      - name: Installa le dipendenze
+        run: composer install --no-progress --prefer-dist
+
+      - name: Lint (WPCS)
+        run: vendor/bin/phpcs
+
+      - name: Test
+        run: vendor/bin/phpunit
+
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installa Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Build
+        run: npm run build
