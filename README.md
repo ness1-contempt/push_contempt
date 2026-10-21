@@ -40,7 +40,7 @@ pagina Releases.
 
 ```sh
 cd wp-content/plugins
-git clone <url-di-questo-repo> push_contempt
+git clone https://github.com/ness1-contempt/push_contempt.git
 cd push_contempt
 npm install
 npm run build   # genera build/, richiesto: senza non c'è UI admin
