@@ -36,10 +36,10 @@ export default function ImpostazioniTab() {
 	return (
 		<div style={ { marginTop: '16px' } }>
 			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
-				Genera le credenziali per collegare la tua sessione Claude Code (con push_contempt_mcp installato) a
-				questo sito: niente terminale, niente da cercare in wp-admin. Copia il blocco e incollalo nel file{ ' ' }
-				<code>.env</code> di push_contempt_mcp. Rigenerando, le credenziali precedenti smettono subito di
-				funzionare.
+				Genera le credenziali per collegare la tua sessione Claude a questo sito dopo aver installato
+				push_contempt_mcp. Una volta cliccato il bottone "Genera credenziali" le vecchie smettono di
+				funzionare, quindi copiale e incollale nel file <code>.env</code> che si trova nella cartella
+				push_contempt_mcp sostituendo i vecchi campi con i nuovi generati.
 			</p>
 
 			<Button variant="primary" onClick={ genera } isBusy={ caricamento }>
