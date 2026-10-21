@@ -1,9 +1,9 @@
-import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, Spinner } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
 import StatoCollegamentoAI from './StatoCollegamentoAI';
+import useRestFetch from '../hooks/useRestFetch';
 
 /**
  * Messaggio pronto da incollare nella chat dell'assistente AI del cliente
@@ -29,24 +29,10 @@ function messaggioPronto( prodotto ) {
  * solo stato del collegamento e messaggio pronto - qui per singolo prodotto).
  */
 export default function SeoStatoTab( { onNavigate } ) {
-	const [ prodotti, setProdotti ] = useState( null );
-	const [ caricamento, setCaricamento ] = useState( false );
-	const [ errore, setErrore ] = useState( null );
+	const { dati: prodotti, caricamento, errore, carica } = useRestFetch(
+		() => '/push-contempt/v1/seo/stato'
+	);
 	const [ prodottoSelezionato, setProdottoSelezionato ] = useState( null );
-
-	const carica = () => {
-		setCaricamento( true );
-		setErrore( null );
-		apiFetch( { path: '/push-contempt/v1/seo/stato' } )
-			.then( setProdotti )
-			.catch( ( err ) => setErrore( err.message || 'Errore nel caricamento.' ) )
-			.finally( () => setCaricamento( false ) );
-	};
-
-	useEffect( () => {
-		carica();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [] );
 
 	return (
 		<div style={ { marginTop: '16px' } }>

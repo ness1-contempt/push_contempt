@@ -1,7 +1,7 @@
-import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, SelectControl, Spinner } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import LinkProdotto from './LinkProdotto';
+import useRestFetch from '../hooks/useRestFetch';
 
 const PERIODI = [
 	{ label: 'Ultimo mese', value: '1_mese' },
@@ -15,23 +15,9 @@ const PERIODI = [
  */
 export default function VenditeTab() {
 	const [ periodo, setPeriodo ] = useState( '1_mese' );
-	const [ dati, setDati ] = useState( null );
-	const [ caricamento, setCaricamento ] = useState( false );
-	const [ errore, setErrore ] = useState( null );
-
-	const carica = () => {
-		setCaricamento( true );
-		setErrore( null );
-		apiFetch( { path: `/push-contempt/v1/vendite?periodo=${ encodeURIComponent( periodo ) }` } )
-			.then( setDati )
-			.catch( ( err ) => setErrore( err.message || 'Errore nel caricamento.' ) )
-			.finally( () => setCaricamento( false ) );
-	};
-
-	useEffect( () => {
-		carica();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [] );
+	const { dati, caricamento, errore, carica } = useRestFetch(
+		() => `/push-contempt/v1/vendite?periodo=${ encodeURIComponent( periodo ) }`
+	);
 
 	return (
 		<div style={ { marginTop: '16px' } }>

@@ -1,9 +1,9 @@
-import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
 import StatoCollegamentoAI from './StatoCollegamentoAI';
+import useRestFetch from '../hooks/useRestFetch';
 
 /**
  * Messaggio pronto da incollare nella chat dell'assistente AI del cliente.
@@ -27,20 +27,12 @@ function messaggioPronto( cartella ) {
  * entra in questa tab, cosi' resta aggiornato dopo ogni nuova creazione.
  */
 function ProdottiInBozza() {
-	const [ prodotti, setProdotti ] = useState( null );
-	const [ errore, setErrore ] = useState( null );
-
-	const carica = () => {
-		setErrore( null );
-		apiFetch( { path: '/push-contempt/v1/prodotti/bozze' } )
-			.then( setProdotti )
-			.catch( ( err ) => setErrore( err.message || 'Errore nel caricamento.' ) );
-	};
-
-	useEffect( () => {
-		carica();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [] );
+	// caricamento non serve qui: a differenza delle altre tab-elenco, un
+	// refresh manuale lascia visibile la lista precedente invece di
+	// nasconderla dietro uno Spinner (nessun flash tra un "Aggiorna" e l'altro).
+	const { dati: prodotti, errore, carica } = useRestFetch(
+		() => '/push-contempt/v1/prodotti/bozze'
+	);
 
 	return (
 		<div style={ { marginTop: '32px', maxWidth: '640px' } }>

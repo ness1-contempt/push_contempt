@@ -1,32 +1,18 @@
-import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import LinkProdotto from './LinkProdotto';
+import useRestFetch from '../hooks/useRestFetch';
 
 /**
  * Alert scorte: chiama direttamente la REST API del plugin, nessuna AI.
  */
 export default function ScorteTab() {
 	const [ soglia, setSoglia ] = useState( '5' );
-	const [ prodotti, setProdotti ] = useState( null );
-	const [ caricamento, setCaricamento ] = useState( false );
-	const [ errore, setErrore ] = useState( null );
-
-	const carica = () => {
-		setCaricamento( true );
-		setErrore( null );
-		apiFetch( { path: `/push-contempt/v1/scorte?soglia=${ encodeURIComponent( soglia ) }` } )
-			.then( setProdotti )
-			.catch( ( err ) => setErrore( err.message || 'Errore nel caricamento.' ) )
-			.finally( () => setCaricamento( false ) );
-	};
-
-	// Solo al primo caricamento della tab: dopo, è l'utente a chiedere
-	// l'aggiornamento premendo il bottone, non ogni cifra digitata nel campo.
-	useEffect( () => {
-		carica();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [] );
+	// Il path si ricalcola a ogni carica(): la soglia aggiorna la query solo
+	// quando l'utente preme "Aggiorna", non a ogni cifra digitata nel campo.
+	const { dati: prodotti, caricamento, errore, carica } = useRestFetch(
+		() => `/push-contempt/v1/scorte?soglia=${ encodeURIComponent( soglia ) }`
+	);
 
 	return (
 		<div style={ { marginTop: '16px' } }>

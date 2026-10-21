@@ -1,32 +1,19 @@
-import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import LinkProdotto from './LinkProdotto';
+import useRestFetch from '../hooks/useRestFetch';
 
 /**
  * Salute catalogo: chiama direttamente la REST API del plugin, nessuna AI.
  */
 export default function SaluteCatalogoTab() {
 	const [ sogliaDescrizione, setSogliaDescrizione ] = useState( '50' );
-	const [ prodotti, setProdotti ] = useState( null );
-	const [ caricamento, setCaricamento ] = useState( false );
-	const [ errore, setErrore ] = useState( null );
-
-	const carica = () => {
-		setCaricamento( true );
-		setErrore( null );
-		apiFetch( {
-			path: `/push-contempt/v1/salute-catalogo?soglia_descrizione=${ encodeURIComponent( sogliaDescrizione ) }`,
-		} )
-			.then( setProdotti )
-			.catch( ( err ) => setErrore( err.message || 'Errore nel caricamento.' ) )
-			.finally( () => setCaricamento( false ) );
-	};
-
-	useEffect( () => {
-		carica();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [] );
+	const { dati: prodotti, caricamento, errore, carica } = useRestFetch(
+		() =>
+			`/push-contempt/v1/salute-catalogo?soglia_descrizione=${ encodeURIComponent(
+				sogliaDescrizione
+			) }`
+	);
 
 	return (
 		<div style={ { marginTop: '16px' } }>
