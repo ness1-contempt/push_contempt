@@ -2,12 +2,13 @@ import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import LinkProdotto from './LinkProdotto';
 import useRestFetch from '../hooks/useRestFetch';
+import { SOGLIA_SCORTE_DEFAULT } from '../constants';
 
 /**
  * Alert scorte: chiama direttamente la REST API del plugin, nessuna AI.
  */
 export default function ScorteTab() {
-	const [ soglia, setSoglia ] = useState( '5' );
+	const [ soglia, setSoglia ] = useState( String( SOGLIA_SCORTE_DEFAULT ) );
 	// Il path si ricalcola a ogni carica(): la soglia aggiorna la query solo
 	// quando l'utente preme "Aggiorna", non a ogni cifra digitata nel campo.
 	const { dati: prodotti, caricamento, errore, carica } = useRestFetch(

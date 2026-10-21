@@ -3,11 +3,7 @@ import { Notice, Spinner } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
 import BarChart from './BarChart';
 import StatCard from './StatCard';
-
-// Stesse soglie di default usate nelle tab Scorte e Salute catalogo: la
-// Panoramica mostra una prima lettura, non sostituisce i filtri di dettaglio.
-const SOGLIA_SCORTE_DEFAULT = 5;
-const SOGLIA_DESCRIZIONE_DEFAULT = 50;
+import { SOGLIA_DESCRIZIONE_DEFAULT, SOGLIA_SCORTE_DEFAULT } from '../constants';
 
 const COLORE_ESAURITO = '#d63638';
 const COLORE_NORMALE = '#2271b1';

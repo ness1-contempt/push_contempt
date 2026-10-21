@@ -2,12 +2,13 @@ import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import LinkProdotto from './LinkProdotto';
 import useRestFetch from '../hooks/useRestFetch';
+import { SOGLIA_DESCRIZIONE_DEFAULT } from '../constants';
 
 /**
  * Salute catalogo: chiama direttamente la REST API del plugin, nessuna AI.
  */
 export default function SaluteCatalogoTab() {
-	const [ sogliaDescrizione, setSogliaDescrizione ] = useState( '50' );
+	const [ sogliaDescrizione, setSogliaDescrizione ] = useState( String( SOGLIA_DESCRIZIONE_DEFAULT ) );
 	const { dati: prodotti, caricamento, errore, carica } = useRestFetch(
 		() =>
 			`/push-contempt/v1/salute-catalogo?soglia_descrizione=${ encodeURIComponent(
