@@ -191,38 +191,6 @@ export default function PrezziTab() {
 						__next40pxDefaultSize
 					/>
 				</FlexItem>
-			</Flex>
-
-			{ /* Riga propria, non allineata con gli altri controlli: con più
-			prodotti selezionati il campo va a capo e cresce in altezza - in
-			una riga condivisa con align="flex-end" questo spingerebbe giù
-			tutto il resto del form, qui invece cresce solo verso il basso. */ }
-			<div style={ { maxWidth: '640px', marginBottom: '16px' } }>
-				<FormTokenField
-					label="Prodotti"
-					value={ prodottiScelti }
-					suggestions={ prodottiCategoria.map( etichettaProdotto ) }
-					onChange={ ( token ) => {
-						// Solo prodotti scelti dai suggerimenti: niente token liberi
-						// che non corrisponderebbero a nessun id.
-						const valide = prodottiCategoria.map( etichettaProdotto );
-						setProdottiScelti( token.filter( ( t ) => valide.includes( t ) ) );
-					} }
-					disabled={ '' === categoria }
-					placeholder={
-						'' === categoria
-							? 'Scegli prima una categoria'
-							: caricamentoProdotti
-							? 'Caricamento prodotti…'
-							: 'Vuoto = tutta la categoria'
-					}
-					__experimentalExpandOnFocus
-					__experimentalShowHowTo={ false }
-					__next40pxDefaultSize
-				/>
-			</div>
-
-			<Flex justify="flex-start" align="flex-end" wrap gap={ 3 } style={ { marginBottom: '16px' } }>
 				<FlexItem style={ { minWidth: '140px' } }>
 					<TextControl
 						label="Percentuale (es. 10 o -10)"
@@ -253,6 +221,35 @@ export default function PrezziTab() {
 					</Button>
 				</FlexItem>
 			</Flex>
+
+			{ /* Riga propria, non allineata con gli altri controlli: con più
+			prodotti selezionati il campo va a capo e cresce in altezza - in
+			una riga condivisa con align="flex-end" questo spingerebbe giù
+			tutto il resto del form, qui invece cresce solo verso il basso. */ }
+			<div style={ { maxWidth: '640px', marginBottom: '16px' } }>
+				<FormTokenField
+					label="Prodotti"
+					value={ prodottiScelti }
+					suggestions={ prodottiCategoria.map( etichettaProdotto ) }
+					onChange={ ( token ) => {
+						// Solo prodotti scelti dai suggerimenti: niente token liberi
+						// che non corrisponderebbero a nessun id.
+						const valide = prodottiCategoria.map( etichettaProdotto );
+						setProdottiScelti( token.filter( ( t ) => valide.includes( t ) ) );
+					} }
+					disabled={ '' === categoria }
+					placeholder={
+						'' === categoria
+							? 'Scegli prima una categoria'
+							: caricamentoProdotti
+							? 'Caricamento prodotti…'
+							: 'Vuoto = tutta la categoria'
+					}
+					__experimentalExpandOnFocus
+					__experimentalShowHowTo={ false }
+					__next40pxDefaultSize
+				/>
+			</div>
 
 			{ errore && (
 				<Notice status="error" isDismissible={ false }>
