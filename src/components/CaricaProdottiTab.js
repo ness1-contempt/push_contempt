@@ -3,7 +3,7 @@ import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
 
 /**
- * Messaggio pronto da incollare nella sessione Claude Code del cliente.
+ * Messaggio pronto da incollare nella chat dell'assistente AI del cliente.
  *
  * @param {string} cartella Percorso della cartella prodotti (puo' essere vuoto).
  */
@@ -18,10 +18,11 @@ function messaggioPronto( cartella ) {
 
 /**
  * Caricamento prodotti: richiede testo libero ed estrazione di contenuto da
- * file sul computer del cliente, impossibile da un browser - serve la sua
- * sessione Claude Code (con push_contempt_mcp configurato, vedi tab
- * Impostazioni). Questa tab non esegue nulla: prepara il percorso cartella e
- * il messaggio da incollare, e mostra se il bridge si e' gia' collegato.
+ * file sul computer del cliente, impossibile da un browser - serve il suo
+ * assistente AI (Claude Code, Cursor, ecc. - con push_contempt_mcp
+ * configurato, vedi tab Impostazioni). Questa tab non esegue nulla: prepara
+ * il percorso cartella e il messaggio da incollare, e mostra se il bridge si
+ * e' gia' collegato.
  */
 export default function CaricaProdottiTab( { onNavigate } ) {
 	const [ stato, setStato ] = useState( null );
@@ -43,9 +44,9 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 		<div style={ { marginTop: '16px' } }>
 			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
 				Il caricamento non avviene da qui: serve leggere file sul tuo computer e scrivere i testi con
-				l'AI, cose che un browser non può fare. Lo fa la tua sessione Claude Code (con push_contempt_mcp
-				configurato - vedi la tab Impostazioni se non l'hai ancora fatto). Qui sotto prepari il percorso e il
-				messaggio da incollarle.
+				l'AI, cose che un browser non può fare. Lo fa il tuo assistente AI - Claude Code, Cursor, Windsurf
+				e simili (con push_contempt_mcp configurato - vedi la tab Impostazioni se non l'hai ancora fatto).
+				Qui sotto prepari il percorso e il messaggio da incollargli.
 			</p>
 
 			{ ! stato && ! erroreStato && <Spinner /> }
@@ -81,7 +82,7 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 			) }
 
 			<ol style={ { maxWidth: '640px', marginBottom: '16px', color: '#1e1e1e' } }>
-				<li>Apri il terminale dove hai Claude Code (con push_contempt_mcp configurato).</li>
+				<li>Apri il terminale dove hai il tuo assistente AI collegato (con push_contempt_mcp configurato).</li>
 				<li>Trascina lì la cartella dei prodotti: comparirà il percorso completo.</li>
 				<li>Copia quel percorso e incollalo nel campo qui sotto.</li>
 			</ol>
@@ -97,7 +98,7 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 			</div>
 
 			<p style={ { maxWidth: '640px', fontWeight: 600, marginBottom: '8px' } }>
-				Messaggio pronto per Claude Code:
+				Messaggio pronto per il tuo assistente AI:
 			</p>
 			<pre
 				style={ {

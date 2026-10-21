@@ -36,10 +36,10 @@ export default function ImpostazioniTab() {
 	return (
 		<div style={ { marginTop: '16px' } }>
 			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
-				Genera le credenziali per collegare la tua sessione Claude a questo sito dopo aver installato
-				push_contempt_mcp. Una volta cliccato il bottone "Genera credenziali" le vecchie smettono di
-				funzionare, quindi copiale e incollale nel file <code>.env</code> che si trova nella cartella
-				push_contempt_mcp sostituendo i vecchi campi con i nuovi generati.
+				Genera le credenziali per collegare il tuo assistente AI (Claude Code, Cursor, Windsurf e simili) a
+				questo sito dopo aver installato push_contempt_mcp. Una volta cliccato il bottone "Genera credenziali"
+				le vecchie smettono di funzionare, quindi copiale e incollale nel file <code>.env</code> che si trova
+				nella cartella push_contempt_mcp sostituendo i vecchi campi con i nuovi generati.
 			</p>
 
 			<Button variant="primary" onClick={ genera } isBusy={ caricamento }>
