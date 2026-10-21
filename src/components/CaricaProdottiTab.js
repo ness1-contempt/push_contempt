@@ -1,6 +1,7 @@
-import apiFetch from '@wordpress/api-fetch';
-import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
+import { TextControl } from '@wordpress/components';
+import { useState } from '@wordpress/element';
+import MessaggioProntoAI from './MessaggioProntoAI';
+import StatoCollegamentoAI from './StatoCollegamentoAI';
 
 /**
  * Messaggio pronto da incollare nella chat dell'assistente AI del cliente.
@@ -25,20 +26,7 @@ function messaggioPronto( cartella ) {
  * e' gia' collegato.
  */
 export default function CaricaProdottiTab( { onNavigate } ) {
-	const [ stato, setStato ] = useState( null );
-	const [ erroreStato, setErroreStato ] = useState( null );
 	const [ cartella, setCartella ] = useState( '' );
-	const [ copiato, setCopiato ] = useState( false );
-
-	useEffect( () => {
-		apiFetch( { path: '/push-contempt/v1/credenziali' } )
-			.then( setStato )
-			.catch( ( err ) => setErroreStato( err.message || 'Errore nel controllo dello stato.' ) );
-	}, [] );
-
-	const copiaMessaggio = () => {
-		navigator.clipboard.writeText( messaggioPronto( cartella.trim() ) ).then( () => setCopiato( true ) );
-	};
 
 	return (
 		<div style={ { marginTop: '16px' } }>
@@ -49,37 +37,7 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 				Qui sotto prepari il percorso e il messaggio da incollare nella chat con il tuo assistente AI.
 			</p>
 
-			{ ! stato && ! erroreStato && <Spinner /> }
-
-			{ erroreStato && (
-				<Notice status="error" isDismissible={ false } style={ { maxWidth: '640px', marginBottom: '16px' } }>
-					{ erroreStato }
-				</Notice>
-			) }
-
-			{ stato && ! stato.esiste && (
-				<Notice status="warning" isDismissible={ false } style={ { maxWidth: '640px', marginBottom: '16px' } }>
-					Nessuna credenziale push_contempt_mcp trovata.{ ' ' }
-					<Button variant="link" onClick={ () => onNavigate( 'impostazioni' ) }>
-						Vai a Impostazioni
-					</Button>{ ' ' }
-					per generarla.
-				</Notice>
-			) }
-
-			{ stato && stato.esiste && (
-				<Notice
-					status={ stato.ultimo_utilizzo ? 'success' : 'info' }
-					isDismissible={ false }
-					style={ { maxWidth: '640px', marginBottom: '16px' } }
-				>
-					{ stato.ultimo_utilizzo
-						? `Ultimo collegamento di push_contempt_mcp: ${ new Date(
-								stato.ultimo_utilizzo * 1000
-						  ).toLocaleString( 'it-IT' ) }.`
-						: "Credenziali generate, ma push_contempt_mcp non si è ancora collegato da qui." }
-				</Notice>
-			) }
+			<StatoCollegamentoAI onNavigate={ onNavigate } />
 
 			<ol style={ { maxWidth: '640px', marginBottom: '16px', color: '#1e1e1e' } }>
 				<li>Apri il terminale dove hai il tuo assistente AI collegato (con push_contempt_mcp configurato).</li>
@@ -97,26 +55,7 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 				/>
 			</div>
 
-			<p style={ { maxWidth: '640px', fontWeight: 600, marginBottom: '8px' } }>
-				Messaggio pronto per il tuo assistente AI:
-			</p>
-			<pre
-				style={ {
-					maxWidth: '640px',
-					background: '#1e1e1e',
-					color: '#f0f0f1',
-					padding: '12px',
-					borderRadius: '4px',
-					whiteSpace: 'pre-wrap',
-					fontSize: '13px',
-					marginBottom: '12px',
-				} }
-			>
-				{ messaggioPronto( cartella.trim() ) }
-			</pre>
-			<Button variant="primary" onClick={ copiaMessaggio }>
-				{ copiato ? 'Copiato ✓' : 'Copia messaggio' }
-			</Button>
+			<MessaggioProntoAI testo={ messaggioPronto( cartella.trim() ) } />
 		</div>
 	);
 }
