@@ -1,5 +1,7 @@
-import { TextControl } from '@wordpress/components';
-import { useState } from '@wordpress/element';
+import apiFetch from '@wordpress/api-fetch';
+import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
+import { useEffect, useState } from '@wordpress/element';
+import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
 import StatoCollegamentoAI from './StatoCollegamentoAI';
 
@@ -14,6 +16,65 @@ function messaggioPronto( cartella ) {
 		`Carica su WooCommerce i prodotti nuovi che trovi in ${ posto }: per ciascuno leggi immagini e testo ` +
 		'disponibili, crea il prodotto con titolo, descrizione e categoria adatti, e scrivi anche titolo SEO e ' +
 		'meta description con Yoast.'
+	);
+}
+
+/**
+ * Prodotti creati da crea_prodotto e non ancora pubblicati: promemoria
+ * persistente di cosa resta da rivedere. Non serve un tracciamento a parte,
+ * lo stato "draft" di WooCommerce stesso e' l'elenco (vedi
+ * ProdottiController::handle_bozze) - si ricarica da zero ogni volta che si
+ * entra in questa tab, cosi' resta aggiornato dopo ogni nuova creazione.
+ */
+function ProdottiInBozza() {
+	const [ prodotti, setProdotti ] = useState( null );
+	const [ errore, setErrore ] = useState( null );
+
+	const carica = () => {
+		setErrore( null );
+		apiFetch( { path: '/push-contempt/v1/prodotti/bozze' } )
+			.then( setProdotti )
+			.catch( ( err ) => setErrore( err.message || 'Errore nel caricamento.' ) );
+	};
+
+	useEffect( () => {
+		carica();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [] );
+
+	return (
+		<div style={ { marginTop: '32px', maxWidth: '640px' } }>
+			<div style={ { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' } }>
+				<h3 style={ { margin: 0 } }>Prodotti in bozza</h3>
+				<Button variant="link" onClick={ carica }>
+					Aggiorna
+				</Button>
+			</div>
+			<p style={ { marginBottom: '16px', color: '#50575e' } }>
+				Prodotti creati dal tuo assistente AI ma non ancora pubblicati: apri ciascuno per rivederlo
+				(testo, immagini, SEO) e pubblicarlo da wp-admin quando è pronto.
+			</p>
+
+			{ errore && (
+				<Notice status="error" isDismissible={ false }>
+					{ errore }
+				</Notice>
+			) }
+
+			{ ! prodotti && ! errore && <Spinner /> }
+
+			{ prodotti && 0 === prodotti.length && <p>Nessun prodotto in bozza al momento.</p> }
+
+			{ prodotti && prodotti.length > 0 && (
+				<ul>
+					{ prodotti.map( ( prodotto ) => (
+						<li key={ prodotto.id }>
+							<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
+						</li>
+					) ) }
+				</ul>
+			) }
+		</div>
 	);
 }
 
@@ -60,6 +121,8 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 			</div>
 
 			<MessaggioProntoAI testo={ messaggioPronto( cartella.trim() ) } />
+
+			<ProdottiInBozza />
 		</div>
 	);
 }
