@@ -13,7 +13,8 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 /**
- * Due rotte: /prezzi/calcola (solo lettura, anteprima) e /prezzi/applica
+ * Tre rotte: /prezzi/calcola (solo lettura, anteprima), /prezzi/impostazioni
+ * (solo lettura, separatore decimale per browser_tools.py) e /prezzi/applica
  * (scrittura, usa l'API nativa di WooCommerce - niente SQL diretto: WC si
  * occupa da sola di _price/sconto attivo e della lookup table).
  *
@@ -52,6 +53,16 @@ class PrezziController {
 
 		register_rest_route(
 			'push-contempt/v1',
+			'/prezzi/impostazioni',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( self::class, 'handle_impostazioni' ),
+				'permission_callback' => array( self::class, 'permission' ),
+			)
+		);
+
+		register_rest_route(
+			'push-contempt/v1',
 			'/prezzi/applica',
 			array(
 				'methods'             => 'POST',
@@ -72,6 +83,20 @@ class PrezziController {
 	 */
 	public static function permission(): bool {
 		return current_user_can( 'manage_woocommerce' );
+	}
+
+	/**
+	 * Separatore decimale del campo prezzo cosi' come lo mostra wp-admin -
+	 * serve a browser_tools.py in push_contempt_mcp per scrivere il prezzo
+	 * nel formato che il sito si aspetta (es. "9,99" invece di "9.99" sui
+	 * siti configurati in italiano), senza bisogno di leggere l'opzione dal
+	 * DB direttamente.
+	 */
+	public static function handle_impostazioni(): WP_REST_Response {
+		return new WP_REST_Response(
+			array( 'separatore_decimale' => wc_get_price_decimal_separator() ),
+			200
+		);
 	}
 
 	/**
