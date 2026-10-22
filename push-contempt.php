@@ -5,7 +5,8 @@
  * Version:           0.1.8
  * Requires at least: 6.4
  * Requires PHP:      8.0
- * Author:            Andrea
+ * Author:            ness1-contempt
+ * Author URI:        https://github.com/ness1-contempt
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       push-contempt
