@@ -96,6 +96,8 @@ direttamente invece di passare dallo script.
 |---|---|---|
 | `/scorte` | GET | prodotti esauriti o sotto soglia scorte |
 | `/vendite` | GET | report vendite per prodotto in un periodo |
+| `/ordini` | GET | elenco ordini per stato (nativi WooCommerce) e finestra temporale, senza dati personali |
+| `/ordini/<id>` | GET | dettaglio di un ordine, con dati del cliente |
 | `/salute-catalogo` | GET | prodotti pubblicati ma incompleti |
 | `/prezzi/calcola` | GET | anteprima aggiornamento prezzi per categoria |
 | `/prezzi/applica` | POST | applica l'aggiornamento prezzi approvato |
