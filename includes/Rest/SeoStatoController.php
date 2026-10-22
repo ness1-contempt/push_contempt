@@ -10,9 +10,11 @@ namespace PushContempt\Rest;
 use WP_REST_Response;
 
 /**
- * Per ogni prodotto pubblicato: titolo SEO e meta description impostati o
- * mancanti, con le rispettive lunghezze - utile per capire da dove
- * iniziare un'ottimizzazione SEO del catalogo.
+ * Per ogni prodotto pubblicato o in bozza: titolo SEO e meta description
+ * impostati o mancanti, con le rispettive lunghezze, piu' stato e data di
+ * creazione - utile per capire da dove iniziare un'ottimizzazione SEO del
+ * catalogo, e per distinguere in UI i prodotti appena inseriti da quelli
+ * del catalogo consolidato (vedi SeoStatoTab.js).
  */
 class SeoStatoController {
 
@@ -39,15 +41,15 @@ class SeoStatoController {
 	}
 
 	/**
-	 * Stato SEO di tutti i prodotti pubblicati.
+	 * Stato SEO di tutti i prodotti pubblicati o in bozza.
 	 */
 	public static function handle(): WP_REST_Response {
 		$prodotti = wc_get_products(
 			array(
-				'status'  => 'publish',
+				'status'  => array( 'publish', 'draft' ),
 				'limit'   => -1,
-				'orderby' => 'title',
-				'order'   => 'ASC',
+				'orderby' => 'date',
+				'order'   => 'DESC',
 			)
 		);
 
@@ -56,10 +58,13 @@ class SeoStatoController {
 			$titolo_seo          = get_post_meta( $prodotto->get_id(), '_yoast_wpseo_title', true );
 			$meta_description    = get_post_meta( $prodotto->get_id(), '_yoast_wpseo_metadesc', true );
 			$parola_chiave_focus = get_post_meta( $prodotto->get_id(), '_yoast_wpseo_focuskw', true );
+			$creato              = $prodotto->get_date_created();
 
 			$risultato[] = array(
 				'id'                         => $prodotto->get_id(),
 				'titolo'                     => $prodotto->get_name(),
+				'stato'                      => $prodotto->get_status(),
+				'data_creazione'             => $creato ? $creato->date( 'c' ) : null,
 				'titolo_seo'                 => '' !== $titolo_seo ? $titolo_seo : null,
 				'meta_description'           => '' !== $meta_description ? $meta_description : null,
 				'parola_chiave_focus'        => '' !== $parola_chiave_focus ? $parola_chiave_focus : null,
