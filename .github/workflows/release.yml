@@ -13,12 +13,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Installa PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.0"
+          tools: composer
+
+      - name: Installa le dipendenze PHP (solo runtime)
+        run: composer install --no-dev --optimize-autoloader --no-progress --prefer-dist
+
       - name: Installa Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Installa le dipendenze
+      - name: Installa le dipendenze JS
         run: npm ci
 
       - name: Build
@@ -27,7 +36,7 @@ jobs:
       - name: Prepara la cartella del plugin
         run: |
           mkdir -p dist/push_contempt
-          cp -r push-contempt.php includes build LICENSE README.md dist/push_contempt/
+          cp -r push-contempt.php includes build vendor LICENSE README.md dist/push_contempt/
 
       - name: Crea lo zip
         run: |
