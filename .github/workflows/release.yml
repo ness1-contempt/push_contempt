@@ -40,10 +40,12 @@ jobs:
 
       - name: Crea lo zip
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
           cd dist
-          zip -r push_contempt.zip push_contempt
+          zip -r "push_contempt-${VERSION}.zip" push_contempt
+          echo "ZIP_NAME=push_contempt-${VERSION}.zip" >> "$GITHUB_ENV"
 
       - name: Pubblica la release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/push_contempt.zip
+          files: dist/${{ env.ZIP_NAME }}
