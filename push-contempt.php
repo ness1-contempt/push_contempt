@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Push Contempt
  * Description:       Strumenti WooCommerce: scorte, prezzi in blocco, report vendite, salute catalogo, SEO, caricamento prodotti (con assistente AI via MCP).
- * Version:           0.1.0
+ * Version:           0.1.8
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            Andrea
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Niente accesso diretto al file.
 }
 
-define( 'PUSH_CONTEMPT_VERSION', '0.1.0' );
+define( 'PUSH_CONTEMPT_VERSION', '0.1.8' );
 define( 'PUSH_CONTEMPT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PUSH_CONTEMPT_URL', plugin_dir_url( __FILE__ ) );
 
