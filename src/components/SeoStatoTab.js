@@ -2,6 +2,7 @@ import apiFetch from '@wordpress/api-fetch';
 import { Button, CheckboxControl, Notice, SelectControl, Spinner } from '@wordpress/components';
 import { Fragment, useState } from '@wordpress/element';
 import ConcorrentiSezione from './ConcorrentiSezione';
+import GuidaSeo from './GuidaSeo';
 import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
 import StatoCollegamentoAI from './StatoCollegamentoAI';
@@ -166,6 +167,9 @@ export default function SeoStatoTab( { onNavigate } ) {
 				SEO.
 			</p>
 			<StatoCollegamentoAI onNavigate={ onNavigate } />
+			<div style={ { marginTop: '16px' } }>
+				<GuidaSeo argomento="versioni" />
+			</div>
 
 			<div style={ { margin: '16px 0', display: 'flex', gap: '16px', alignItems: 'flex-end' } }>
 				<Button variant="primary" onClick={ carica } isBusy={ caricamento }>

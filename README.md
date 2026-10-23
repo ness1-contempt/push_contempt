@@ -72,6 +72,63 @@ nativa di WordPress (non scade da sola). Copia i tre valori mostrati
 lì in poi i tab "Carica prodotti" e "SEO" mostrano se il collegamento è
 attivo e preparano il messaggio pronto da incollare in chat.
 
+## Il tab SEO: versioni e confronto con i concorrenti
+
+Il tab ha due parti, entrambe con una guida a scomparsa nella pagina stessa.
+
+### Le tre versioni dei campi SEO
+
+Quando l'assistente AI scrive titolo SEO, meta description e parola chiave
+focus di un prodotto, il plugin tiene tre versioni, così non si perde niente:
+
+- **Base**: il punto di partenza, cioè com'era il prodotto prima del primo
+  intervento (di norma quello che c'era in Yoast). Non cambia mentre si lavora.
+  Solo l'utente può ridefinirla, con «Usa l'attuale come nuova base»: da quel
+  momento la base non è più l'originale di Yoast e quello stato non si
+  recupera più (la conferma lo dice, e il badge della base passa da blu
+  «Originale» ad arancione «Impostata da te»).
+- **Precedente**: la versione da cui si viene, cioè quella che c'era prima
+  dell'ultima scrittura o dell'ultimo ripristino. Si prende dai valori vivi di
+  Yoast, quindi comprende anche le correzioni fatte a mano.
+- **Attuale**: quella in uso adesso in Yoast. Non è copiata: si legge dal vivo.
+  L'origine mostrata è chi ha scritto per ultimo (es. «concorrente x.it»),
+  oppure «modifica manuale» se qualcuno l'ha cambiata a mano da allora.
+
+Dalla colonna «Versioni» → «Mostra versioni» si vedono le tre versioni
+affiancate. «Torna alla base» e «Torna al precedente» rimettono quei testi in
+Yoast; la versione lasciata diventa il «precedente», quindi si può sempre
+tornare indietro. Per più prodotti si spunta «Seleziona» e si usa la barra
+sopra la tabella; ogni azione chiede conferma. Le versioni riguardano solo i
+tre campi SEO (non la descrizione) e un prodotto le ha solo dopo che il plugin
+ha scritto i suoi campi SEO almeno una volta.
+
+### Concorrenti e confronto
+
+La sezione «Concorrenti e confronto» mostra i siti che l'utente ha fatto
+analizzare al proprio assistente AI, con un punteggio da 0 a 9 per area
+(titoli, meta description, intestazioni, dati strutturati, contenuto, aspetti
+tecnici).
+
+1. **Si chiede l'analisi** all'assistente, ad es. «Analizza il sito
+   https://… e dimmi com'è messo con la SEO». Gira sul computer dell'utente
+   (non sul sito WordPress) e richiede da qualche decina di secondi a un paio
+   di minuti.
+2. **Il risultato compare nella tabella.** Cliccando un sito si vedono le prove
+   dietro ogni voto e i limiti che hanno abbassato un'area.
+3. **Si fa analizzare anche il proprio sito**: compare per primo come «Il tuo
+   sito» e gli altri mostrano la differenza area per area, (+2) = due punti
+   meglio di te, (−1) = uno peggio.
+4. **L'utente decide** se e per quali aree usare un concorrente come
+   ispirazione. L'assistente scrive testi originali e, prima di applicarli,
+   misura la somiglianza (0 = nessuna, 9 = copia) lasciando scegliere
+   all'utente il livello accettato. Le modifiche portano il nome del
+   concorrente e si annullano dalle versioni.
+
+Il punteggio misura solo la struttura (non posizionamento, autorevolezza,
+velocità né qualità dei testi) ed è solo un riferimento: un sito mediocre può
+essere un buon modello per una sola area. Al plugin arrivano solo i punteggi e
+le prove, mai i testi delle pagine analizzate.
+
 ## Comandi
 
 | Cosa | Comando |

@@ -1,6 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, Spinner } from '@wordpress/components';
 import { Fragment, useState } from '@wordpress/element';
+import GuidaSeo from './GuidaSeo';
 import useRestFetch from '../hooks/useRestFetch';
 
 const AREE = [
@@ -124,11 +125,10 @@ export default function ConcorrentiSezione() {
 		<div style={ { marginTop: '32px' } }>
 			<h3>Concorrenti e confronto</h3>
 			<p style={ { maxWidth: '780px', color: '#50575e' } }>
-				Punteggio da 0 a 9 della struttura SEO dei siti che hai fatto analizzare al tuo assistente AI (es.
-				«analizza il sito di un concorrente»), area per area. È solo un riferimento: scegli tu se e per quali
-				aree prendere un sito come ispirazione. Se fai analizzare anche il tuo sito, compare per primo e gli
-				altri mostrano la differenza rispetto a te.
+				Punteggio da 0 a 9 della struttura SEO dei siti che hai fatto analizzare al tuo assistente AI, area per
+				area. È solo un riferimento: scegli tu se e per quali aree prendere un sito come ispirazione.
 			</p>
+			<GuidaSeo argomento="concorrenti" />
 			<Button variant="secondary" onClick={ carica } isBusy={ caricamento }>
 				Aggiorna
 			</Button>
