@@ -111,7 +111,8 @@ direttamente invece di passare dallo script.
 | `/prezzi/calcola` | GET | anteprima aggiornamento prezzi per categoria |
 | `/prezzi/applica` | POST | applica l'aggiornamento prezzi approvato |
 | `/seo/stato` | GET | vista d'insieme SEO su tutto il catalogo |
-| `/seo/prodotto` | GET/POST | lettura/scrittura campi Yoast di un prodotto |
+| `/seo/prodotto` | GET/POST | lettura/scrittura campi Yoast di un prodotto (la prima scrittura conserva i valori precedenti) |
+| `/seo/ripristina` | POST | `ids`: rimette titolo SEO, meta description e parola chiave come prima del primo intervento |
 | `/prodotti` | POST | crea un prodotto in bozza (titolo, descrizione, prezzo, categoria, immagini, SEO) |
 | `/prodotti/bozze` | GET | prodotti creati e non ancora pubblicati |
 | `/credenziali` | GET/POST | stato/generazione della Application Password per `push_contempt_mcp` |

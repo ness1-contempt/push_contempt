@@ -1,4 +1,5 @@
-import { Button, Notice, SelectControl, Spinner } from '@wordpress/components';
+import apiFetch from '@wordpress/api-fetch';
+import { Button, CheckboxControl, Notice, SelectControl, Spinner } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
@@ -32,6 +33,7 @@ const FILTRI = {
 	appena_inseriti: ( prodotto ) => etaInMs( prodotto ) <= TRE_ORE_IN_MS,
 	bozza: ( prodotto ) => 'draft' === prodotto.stato,
 	consolidato: ( prodotto ) => 'publish' === prodotto.stato && etaInMs( prodotto ) > TRE_ORE_IN_MS,
+	ripristinabili: ( prodotto ) => !! prodotto.originale,
 };
 
 const OPZIONI_FILTRO = [
@@ -39,6 +41,7 @@ const OPZIONI_FILTRO = [
 	{ label: 'Appena inseriti (ultime 3 ore)', value: 'appena_inseriti' },
 	{ label: 'In bozza', value: 'bozza' },
 	{ label: 'Catalogo consolidato (da più di 3 ore)', value: 'consolidato' },
+	{ label: 'Modificati, con ripristino disponibile', value: 'ripristinabili' },
 ];
 
 /**
@@ -73,8 +76,44 @@ export default function SeoStatoTab( { onNavigate } ) {
 	);
 	const [ prodottoSelezionato, setProdottoSelezionato ] = useState( null );
 	const [ filtro, setFiltro ] = useState( 'tutti' );
+	const [ daRipristinare, setDaRipristinare ] = useState( new Set() );
+	const [ ripristinoInCorso, setRipristinoInCorso ] = useState( false );
+	const [ esitoRipristino, setEsitoRipristino ] = useState( null );
 
 	const prodottiFiltrati = prodotti ? prodotti.filter( FILTRI[ filtro ] ) : null;
+	const ripristinabiliVisibili = prodottiFiltrati ? prodottiFiltrati.filter( ( p ) => p.originale ) : [];
+
+	const attivaSelezione = ( id, attiva ) => {
+		setDaRipristinare( ( precedenti ) => {
+			const nuovi = new Set( precedenti );
+			if ( attiva ) {
+				nuovi.add( id );
+			} else {
+				nuovi.delete( id );
+			}
+			return nuovi;
+		} );
+	};
+
+	const ripristina = ( ids ) => {
+		const conferma = 1 === ids.length
+			? 'Rimettere titolo SEO, meta description e parola chiave come erano prima della modifica?'
+			: `Rimettere i campi SEO di ${ ids.length } prodotti come erano prima della modifica?`;
+		if ( ! window.confirm( conferma ) ) {
+			return;
+		}
+		setRipristinoInCorso( true );
+		setEsitoRipristino( null );
+		apiFetch( { path: '/push-contempt/v1/seo/ripristina', method: 'POST', data: { ids } } )
+			.then( ( esiti ) => {
+				const fatti = Object.values( esiti ).filter( ( e ) => 'ripristinato' === e ).length;
+				setEsitoRipristino( { status: 'success', testo: `Ripristinati ${ fatti } prodotti su ${ ids.length }.` } );
+				setDaRipristinare( new Set() );
+				carica();
+			} )
+			.catch( ( err ) => setEsitoRipristino( { status: 'error', testo: err.message || 'Errore nel ripristino.' } ) )
+			.finally( () => setRipristinoInCorso( false ) );
+	};
 
 	return (
 		<div style={ { marginTop: '16px' } }>
@@ -91,6 +130,23 @@ export default function SeoStatoTab( { onNavigate } ) {
 				<Button variant="primary" onClick={ carica } isBusy={ caricamento }>
 					Aggiorna
 				</Button>
+				{ daRipristinare.size > 0 && (
+					<Button
+						variant="secondary"
+						isBusy={ ripristinoInCorso }
+						onClick={ () => ripristina( Array.from( daRipristinare ) ) }
+					>
+						Ripristina selezionati ({ daRipristinare.size })
+					</Button>
+				) }
+				{ ripristinabiliVisibili.length > 0 && (
+					<Button
+						variant="tertiary"
+						onClick={ () => setDaRipristinare( new Set( ripristinabiliVisibili.map( ( p ) => p.id ) ) ) }
+					>
+						Seleziona tutti i modificati
+					</Button>
+				) }
 				<SelectControl
 					label="Mostra"
 					value={ filtro }
@@ -103,6 +159,12 @@ export default function SeoStatoTab( { onNavigate } ) {
 			{ errore && (
 				<Notice status="error" isDismissible={ false }>
 					{ errore }
+				</Notice>
+			) }
+
+			{ esitoRipristino && (
+				<Notice status={ esitoRipristino.status } onRemove={ () => setEsitoRipristino( null ) }>
+					{ esitoRipristino.testo }
 				</Notice>
 			) }
 
@@ -119,6 +181,7 @@ export default function SeoStatoTab( { onNavigate } ) {
 							<th>Meta description</th>
 							<th>Parola chiave focus</th>
 							<th>Scrivi con AI</th>
+							<th>Prima della modifica</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -148,6 +211,35 @@ export default function SeoStatoTab( { onNavigate } ) {
 									<Button variant="link" onClick={ () => setProdottoSelezionato( prodotto ) }>
 										Prepara messaggio
 									</Button>
+								</td>
+								<td>
+									{ prodotto.originale ? (
+										<div>
+											<CheckboxControl
+												label="Seleziona"
+												checked={ daRipristinare.has( prodotto.id ) }
+												onChange={ ( attiva ) => attivaSelezione( prodotto.id, attiva ) }
+											/>
+											<div style={ { fontSize: '12px', color: '#50575e' } }>
+												<div>Titolo: { prodotto.originale.titolo_seo || '—' }</div>
+												<div>Meta: { prodotto.originale.meta_description || '—' }</div>
+												<div>
+													Da { prodotto.originale.origine || 'api' },{ ' ' }
+													{ new Date( prodotto.originale.salvato_il ).toLocaleString( 'it-IT' ) }
+												</div>
+											</div>
+											<Button
+												variant="link"
+												isDestructive
+												disabled={ ripristinoInCorso }
+												onClick={ () => ripristina( [ prodotto.id ] ) }
+											>
+												Ripristina
+											</Button>
+										</div>
+									) : (
+										'—'
+									) }
 								</td>
 							</tr>
 						) ) }
