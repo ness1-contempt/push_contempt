@@ -50,9 +50,17 @@ Poi attiva "Push Contempt" da wp-admin → Plugin. Compare una nuova voce di
 menu "Push Contempt" (richiede la capability `manage_woocommerce`, quindi
 visibile ad Admin e Store Manager).
 
-`composer install` **non serve** per usare il plugin: le dipendenze in
-`composer.json` sono tutte di sviluppo (phpcs, phpunit, Brain Monkey),
-servono solo per lavorare sul codice (vedi Comandi).
+`composer install --no-dev` **non è obbligatorio** per usare il plugin: l'unica
+dipendenza di runtime è Plugin Update Checker, che gestisce gli
+aggiornamenti da wp-admin (vedi sotto); senza, il plugin funziona comunque ma
+non propone aggiornamenti. Le altre dipendenze in `composer.json` (phpcs,
+phpunit, Brain Monkey) servono solo per lavorare sul codice (vedi Comandi).
+
+### Aggiornamenti
+
+Installato da zip (Opzione A), il plugin controlla da solo le release di
+questo repo e, quando ce n'è una nuova, la propone in wp-admin → Plugin come
+un normale aggiornamento (un click). Il controllo è in cache per circa 12 ore.
 
 ## Primo collegamento con l'assistente AI
 
