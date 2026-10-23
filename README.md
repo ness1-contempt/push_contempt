@@ -111,9 +111,10 @@ direttamente invece di passare dallo script.
 | `/prezzi/calcola` | GET | anteprima aggiornamento prezzi per categoria |
 | `/prezzi/applica` | POST | applica l'aggiornamento prezzi approvato |
 | `/seo/stato` | GET | vista d'insieme SEO su tutto il catalogo |
-| `/seo/prodotto` | GET/POST | lettura/scrittura campi Yoast di un prodotto (la prima scrittura conserva i valori precedenti) |
+| `/seo/prodotto` | GET/POST | lettura/scrittura campi Yoast di un prodotto (tiene base e precedente) |
 | `/concorrenti` | GET/POST/DELETE | analisi SEO dei siti concorrenti inviate dal server MCP (punteggi per area), mostrate nella tab SEO |
-| `/seo/ripristina` | POST | `ids`: rimette titolo SEO, meta description e parola chiave come prima del primo intervento |
+| `/seo/ripristina` | POST | `ids` + `versione` (`base` o `precedente`): rimette quella versione dei campi Yoast; la versione lasciata diventa il precedente |
+| `/seo/base` | POST | `ids`: usa i valori attuali come nuova base (non è più l'originale di Yoast) |
 | `/prodotti` | POST | crea un prodotto in bozza (titolo, descrizione, prezzo, categoria, immagini, SEO) |
 | `/prodotti/bozze` | GET | prodotti creati e non ancora pubblicati |
 | `/credenziali` | GET/POST | stato/generazione della Application Password per `push_contempt_mcp` |

@@ -15,9 +15,9 @@ use WP_REST_Response;
  * impostati o mancanti, con le rispettive lunghezze, piu' stato e data di
  * creazione - utile per capire da dove iniziare un'ottimizzazione SEO del
  * catalogo, e per distinguere in UI i prodotti appena inseriti da quelli
- * del catalogo consolidato (vedi SeoStatoTab.js). `originale` e' lo
- * snapshot dei valori precedenti al primo intervento (null se il prodotto
- * non e' mai stato modificato dal plugin): serve al ripristino.
+ * del catalogo consolidato (vedi SeoStatoTab.js). `versioni` sono
+ * base, precedente e attuale dei campi SEO (null se il prodotto non e' mai
+ * stato modificato dal plugin): serve al ripristino.
  */
 class SeoStatoController {
 
@@ -73,7 +73,14 @@ class SeoStatoController {
 				'parola_chiave_focus'        => '' !== $parola_chiave_focus ? $parola_chiave_focus : null,
 				'lunghezza_titolo_seo'       => strlen( (string) $titolo_seo ),
 				'lunghezza_meta_description' => strlen( (string) $meta_description ),
-				'originale'                  => SeoSnapshot::per_risposta( get_post_meta( $prodotto->get_id(), SeoSnapshot::META_KEY, true ) ),
+				'versioni'                   => SeoSnapshot::per_risposta(
+					get_post_meta( $prodotto->get_id(), SeoSnapshot::META_KEY, true ),
+					array(
+						'titolo_seo'          => (string) $titolo_seo,
+						'meta_description'    => (string) $meta_description,
+						'parola_chiave_focus' => (string) $parola_chiave_focus,
+					)
+				),
 			);
 		}
 

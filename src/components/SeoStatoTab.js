@@ -1,10 +1,11 @@
 import apiFetch from '@wordpress/api-fetch';
 import { Button, CheckboxControl, Notice, SelectControl, Spinner } from '@wordpress/components';
-import { useState } from '@wordpress/element';
+import { Fragment, useState } from '@wordpress/element';
 import ConcorrentiSezione from './ConcorrentiSezione';
 import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
 import StatoCollegamentoAI from './StatoCollegamentoAI';
+import VersioniSeo from './VersioniSeo';
 import useRestFetch from '../hooks/useRestFetch';
 
 const TRE_ORE_IN_MS = 3 * 60 * 60 * 1000;
@@ -34,7 +35,7 @@ const FILTRI = {
 	appena_inseriti: ( prodotto ) => etaInMs( prodotto ) <= TRE_ORE_IN_MS,
 	bozza: ( prodotto ) => 'draft' === prodotto.stato,
 	consolidato: ( prodotto ) => 'publish' === prodotto.stato && etaInMs( prodotto ) > TRE_ORE_IN_MS,
-	ripristinabili: ( prodotto ) => !! prodotto.originale,
+	con_versioni: ( prodotto ) => !! prodotto.versioni,
 };
 
 const OPZIONI_FILTRO = [
@@ -42,8 +43,40 @@ const OPZIONI_FILTRO = [
 	{ label: 'Appena inseriti (ultime 3 ore)', value: 'appena_inseriti' },
 	{ label: 'In bozza', value: 'bozza' },
 	{ label: 'Catalogo consolidato (da più di 3 ore)', value: 'consolidato' },
-	{ label: 'Modificati, con ripristino disponibile', value: 'ripristinabili' },
+	{ label: 'Con versioni salvate (base e precedente)', value: 'con_versioni' },
 ];
+
+const AVVISO_SCAMBIO = 'La versione attuale diventerà il «precedente»: potrai sempre tornarci.';
+
+/**
+ * Le azioni sulle versioni: rotta REST, esito che conta come riuscito, e il testo
+ * della conferma (che dice sempre cosa succede a quello che si lascia).
+ */
+const AZIONI = {
+	base: {
+		path: '/seo/ripristina',
+		dati: { versione: 'base' },
+		esitoOk: 'ripristinato',
+		verbo: 'Riportati alla base',
+		conferma: ( quanti ) => `Rimettere i campi SEO ${ quanti } come nella base? ${ AVVISO_SCAMBIO }`,
+	},
+	precedente: {
+		path: '/seo/ripristina',
+		dati: { versione: 'precedente' },
+		esitoOk: 'ripristinato',
+		verbo: 'Riportati al precedente',
+		conferma: ( quanti ) => `Rimettere i campi SEO ${ quanti } come nel precedente? ${ AVVISO_SCAMBIO }`,
+	},
+	nuova_base: {
+		path: '/seo/base',
+		dati: {},
+		esitoOk: 'impostata',
+		verbo: 'Nuova base impostata',
+		conferma: ( quanti ) =>
+			`Usare i valori attuali ${ quanti } come nuova base? La base smette di essere lo stato originale ` +
+			'prima dei nostri interventi e quello stato non sarà più recuperabile.',
+	},
+};
 
 /**
  * Messaggio pronto da incollare nella chat dell'assistente AI del cliente
@@ -77,15 +110,16 @@ export default function SeoStatoTab( { onNavigate } ) {
 	);
 	const [ prodottoSelezionato, setProdottoSelezionato ] = useState( null );
 	const [ filtro, setFiltro ] = useState( 'tutti' );
-	const [ daRipristinare, setDaRipristinare ] = useState( new Set() );
-	const [ ripristinoInCorso, setRipristinoInCorso ] = useState( false );
-	const [ esitoRipristino, setEsitoRipristino ] = useState( null );
+	const [ selezionati, setSelezionati ] = useState( new Set() );
+	const [ inCorso, setInCorso ] = useState( false );
+	const [ esito, setEsito ] = useState( null );
+	const [ aperto, setAperto ] = useState( null );
 
 	const prodottiFiltrati = prodotti ? prodotti.filter( FILTRI[ filtro ] ) : null;
-	const ripristinabiliVisibili = prodottiFiltrati ? prodottiFiltrati.filter( ( p ) => p.originale ) : [];
+	const conVersioniVisibili = prodottiFiltrati ? prodottiFiltrati.filter( ( p ) => p.versioni ) : [];
 
 	const attivaSelezione = ( id, attiva ) => {
-		setDaRipristinare( ( precedenti ) => {
+		setSelezionati( ( precedenti ) => {
 			const nuovi = new Set( precedenti );
 			if ( attiva ) {
 				nuovi.add( id );
@@ -96,27 +130,30 @@ export default function SeoStatoTab( { onNavigate } ) {
 		} );
 	};
 
-	const ripristina = ( ids ) => {
-		const conferma = 1 === ids.length
-			? 'Rimettere titolo SEO, meta description e parola chiave come erano prima della modifica?'
-			: `Rimettere i campi SEO di ${ ids.length } prodotti come erano prima della modifica?`;
-		if ( ! window.confirm( conferma ) ) {
+	const esegui = ( azione, ids ) => {
+		const { path, dati, esitoOk, conferma, verbo } = AZIONI[ azione ];
+		const quanti = 1 === ids.length ? 'di questo prodotto' : `di ${ ids.length } prodotti`;
+		if ( ! window.confirm( conferma( quanti ) ) ) {
 			return;
 		}
-		setRipristinoInCorso( true );
-		setEsitoRipristino( null );
-		apiFetch( { path: '/push-contempt/v1/seo/ripristina', method: 'POST', data: { ids } } )
+		setInCorso( true );
+		setEsito( null );
+		apiFetch( { path: `/push-contempt/v1${ path }`, method: 'POST', data: { ids, ...dati } } )
 			.then( ( esiti ) => {
-				const fatti = Object.values( esiti ).filter( ( e ) => 'ripristinato' === e ).length;
-				setEsitoRipristino( {
-					status: fatti === ids.length ? 'success' : 'warning',
-					testo: `Ripristinat${ 1 === fatti ? 'o 1 prodotto' : `i ${ fatti } prodotti` } su ${ ids.length }.`,
+				const valori = Object.values( esiti );
+				const fatti = valori.filter( ( e ) => esitoOk === e ).length;
+				const gia = valori.filter( ( e ) => 'gia_in_uso' === e ).length;
+				setEsito( {
+					status: fatti + gia === ids.length ? 'success' : 'warning',
+					testo:
+						`${ verbo }: ${ fatti } su ${ ids.length }.` +
+						( gia ? ` ${ gia } già uguali, lasciati come sono.` : '' ),
 				} );
-				setDaRipristinare( new Set() );
+				setSelezionati( new Set() );
 				carica();
 			} )
-			.catch( ( err ) => setEsitoRipristino( { status: 'error', testo: err.message || 'Errore nel ripristino.' } ) )
-			.finally( () => setRipristinoInCorso( false ) );
+			.catch( ( err ) => setEsito( { status: 'error', testo: err.message || 'Operazione non riuscita.' } ) )
+			.finally( () => setInCorso( false ) );
 	};
 
 	return (
@@ -134,21 +171,12 @@ export default function SeoStatoTab( { onNavigate } ) {
 				<Button variant="primary" onClick={ carica } isBusy={ caricamento }>
 					Aggiorna
 				</Button>
-				{ daRipristinare.size > 0 && (
-					<Button
-						variant="secondary"
-						isBusy={ ripristinoInCorso }
-						onClick={ () => ripristina( Array.from( daRipristinare ) ) }
-					>
-						Ripristina selezionati ({ daRipristinare.size })
-					</Button>
-				) }
-				{ ripristinabiliVisibili.length > 0 && (
+				{ conVersioniVisibili.length > 0 && (
 					<Button
 						variant="tertiary"
-						onClick={ () => setDaRipristinare( new Set( ripristinabiliVisibili.map( ( p ) => p.id ) ) ) }
+						onClick={ () => setSelezionati( new Set( conVersioniVisibili.map( ( p ) => p.id ) ) ) }
 					>
-						Seleziona tutti i modificati
+						Seleziona tutti con versioni salvate
 					</Button>
 				) }
 				<SelectControl
@@ -166,9 +194,29 @@ export default function SeoStatoTab( { onNavigate } ) {
 				</Notice>
 			) }
 
-			{ esitoRipristino && (
-				<Notice status={ esitoRipristino.status } onRemove={ () => setEsitoRipristino( null ) }>
-					{ esitoRipristino.testo }
+			{ selezionati.size > 0 && (
+				<div style={ { margin: '0 0 12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } }>
+					<strong>{ selezionati.size } selezionati:</strong>
+					{ [ 'base', 'precedente', 'nuova_base' ].map( ( azione ) => (
+						<Button
+							key={ azione }
+							variant="secondary"
+							isBusy={ inCorso }
+							disabled={ inCorso }
+							onClick={ () => esegui( azione, Array.from( selezionati ) ) }
+						>
+							{ { base: 'Torna alla base', precedente: 'Torna al precedente', nuova_base: 'Usa l\'attuale come base' }[ azione ] }
+						</Button>
+					) ) }
+					<Button variant="link" onClick={ () => setSelezionati( new Set() ) }>
+						Deseleziona
+					</Button>
+				</div>
+			) }
+
+			{ esito && (
+				<Notice status={ esito.status } onRemove={ () => setEsito( null ) }>
+					{ esito.testo }
 				</Notice>
 			) }
 
@@ -185,12 +233,13 @@ export default function SeoStatoTab( { onNavigate } ) {
 							<th>Meta description</th>
 							<th>Parola chiave focus</th>
 							<th>Scrivi con AI</th>
-							<th>Prima della modifica</th>
+							<th>Versioni</th>
 						</tr>
 					</thead>
 					<tbody>
 						{ prodottiFiltrati.map( ( prodotto ) => (
-							<tr key={ prodotto.id }>
+							<Fragment key={ prodotto.id }>
+							<tr>
 								<td>
 									<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
 								</td>
@@ -217,28 +266,18 @@ export default function SeoStatoTab( { onNavigate } ) {
 									</Button>
 								</td>
 								<td>
-									{ prodotto.originale ? (
+									{ prodotto.versioni ? (
 										<div>
 											<CheckboxControl
 												label="Seleziona"
-												checked={ daRipristinare.has( prodotto.id ) }
+												checked={ selezionati.has( prodotto.id ) }
 												onChange={ ( attiva ) => attivaSelezione( prodotto.id, attiva ) }
 											/>
-											<div style={ { fontSize: '12px', color: '#50575e' } }>
-												<div>Titolo: { prodotto.originale.titolo_seo || '—' }</div>
-												<div>Meta: { prodotto.originale.meta_description || '—' }</div>
-												<div>
-													Da { prodotto.originale.origine || 'api' },{ ' ' }
-													{ new Date( prodotto.originale.salvato_il ).toLocaleString( 'it-IT' ) }
-												</div>
-											</div>
 											<Button
 												variant="link"
-												isDestructive
-												disabled={ ripristinoInCorso }
-												onClick={ () => ripristina( [ prodotto.id ] ) }
+												onClick={ () => setAperto( aperto === prodotto.id ? null : prodotto.id ) }
 											>
-												Ripristina
+												{ aperto === prodotto.id ? 'Nascondi versioni' : 'Mostra versioni' }
 											</Button>
 										</div>
 									) : (
@@ -246,6 +285,18 @@ export default function SeoStatoTab( { onNavigate } ) {
 									) }
 								</td>
 							</tr>
+							{ prodotto.versioni && aperto === prodotto.id && (
+								<tr>
+									<td colSpan={ 8 }>
+										<VersioniSeo
+											versioni={ prodotto.versioni }
+											occupato={ inCorso }
+											onAzione={ ( azione ) => esegui( azione, [ prodotto.id ] ) }
+										/>
+									</td>
+								</tr>
+							) }
+							</Fragment>
 						) ) }
 					</tbody>
 				</table>

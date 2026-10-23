@@ -15,8 +15,9 @@ use WP_REST_Response;
 /**
  * Due rotte sullo stesso percorso: GET legge titolo/descrizione/prezzo del
  * prodotto piu' i campi Yoast attuali (contesto per chi deve scrivere i
- * nuovi testi), POST li sovrascrive dopo aver conservato i valori precedenti
- * (vedi SeoSnapshot); una terza rotta li ripristina. API native di WordPress/WooCommerce
+ * nuovi testi), POST li sovrascrive tenendo le versioni base e precedente
+ * (vedi SeoSnapshot); altre due rotte ripristinano una versione o ridefiniscono
+ * la base. API native di WordPress/WooCommerce
  * (`get_post_meta()`/`update_post_meta()`), niente SQL diretto - stesso
  * principio di ProdottiController e degli altri controller REST.
  */
@@ -83,6 +84,28 @@ class SeoProdottoController {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'handle_ripristina' ),
+				'permission_callback' => array( self::class, 'permission' ),
+				'args'                => array(
+					'ids'      => array(
+						'type'     => 'array',
+						'items'    => array( 'type' => 'integer' ),
+						'required' => true,
+					),
+					'versione' => array(
+						'type'     => 'string',
+						'enum'     => SeoSnapshot::VERSIONI,
+						'required' => true,
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			'push-contempt/v1',
+			'/seo/base',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( self::class, 'handle_imposta_base' ),
 				'permission_callback' => array( self::class, 'permission' ),
 				'args'                => array(
 					'ids' => array(
@@ -164,9 +187,9 @@ class SeoProdottoController {
 
 	/**
 	 * Scrive titolo SEO, meta description e parola chiave focus (sovrascrive
-	 * i valori esistenti, dopo averli conservati in uno snapshot se e' la
-	 * prima modifica: vedi SeoSnapshot). `origine` e' facoltativa e dice chi
-	 * scrive (es. "concorrente x.it"): serve solo a mostrarlo all'utente.
+	 * i valori esistenti, aggiornando base e precedente: vedi SeoSnapshot).
+	 * `origine` e' facoltativa e dice chi scrive (es. "concorrente x.it"):
+	 * serve solo a mostrarlo all'utente.
 	 *
 	 * @param WP_REST_Request $request Richiesta REST in arrivo.
 	 *
@@ -185,14 +208,16 @@ class SeoProdottoController {
 		}
 
 		$esistente = get_post_meta( $prodotto_id, SeoSnapshot::META_KEY, true );
-		$attuali   = self::valori_attuali( $prodotto_id );
-		if ( SeoSnapshot::da_salvare( is_array( $esistente ) ? $esistente : null, $attuali, $nuovi_valori ) ) {
-			$origine = sanitize_text_field( (string) $request->get_param( 'origine' ) );
-			update_post_meta(
-				$prodotto_id,
-				SeoSnapshot::META_KEY,
-				SeoSnapshot::crea( $attuali, '' !== $origine ? $origine : 'api', gmdate( 'c' ) )
-			);
+		$origine   = sanitize_text_field( (string) $request->get_param( 'origine' ) );
+		$versioni  = SeoSnapshot::dopo_scrittura(
+			is_array( $esistente ) ? $esistente : null,
+			self::valori_attuali( $prodotto_id ),
+			$nuovi_valori,
+			'' !== $origine ? $origine : 'api',
+			gmdate( 'c' )
+		);
+		if ( null !== $versioni ) {
+			update_post_meta( $prodotto_id, SeoSnapshot::META_KEY, $versioni );
 		}
 
 		foreach ( self::CAMPI_YOAST as $campo => $meta_key ) {
@@ -203,35 +228,91 @@ class SeoProdottoController {
 	}
 
 	/**
-	 * Rimette i valori SEO di uno o piu' prodotti com'erano prima del primo
-	 * intervento. Un prodotto senza snapshot non viene toccato. Risposta: per
-	 * ogni id l'esito ("ripristinato", "nessuno_snapshot", "non_trovato").
+	 * Rimette la base o il precedente di uno o piu' prodotti. Il precedente
+	 * diventa la versione che si lascia (si puo' sempre tornare indietro).
+	 * Risposta: per ogni id l'esito ("ripristinato", "gia_in_uso",
+	 * "nessuno_snapshot", "non_trovato").
 	 *
 	 * @param WP_REST_Request $request Richiesta REST in arrivo.
 	 */
 	public static function handle_ripristina( WP_REST_Request $request ): WP_REST_Response {
-		$esiti = array();
-		foreach ( array_unique( array_map( 'intval', (array) $request->get_param( 'ids' ) ) ) as $prodotto_id ) {
-			if ( ! wc_get_product( $prodotto_id ) ) {
-				$esiti[ $prodotto_id ] = 'non_trovato';
+		$versione = (string) $request->get_param( 'versione' );
+		$esiti    = array();
+		foreach ( self::ids( $request ) as $prodotto_id ) {
+			$snapshot = self::snapshot_di( $prodotto_id, $esiti );
+			if ( null === $snapshot ) {
 				continue;
 			}
-			$snapshot = get_post_meta( $prodotto_id, SeoSnapshot::META_KEY, true );
-			if ( ! is_array( $snapshot ) || empty( $snapshot ) ) {
-				$esiti[ $prodotto_id ] = 'nessuno_snapshot';
+			$risultato = SeoSnapshot::ripristina( $snapshot, $versione, self::valori_attuali( $prodotto_id ), gmdate( 'c' ) );
+			if ( null === $risultato ) {
+				$esiti[ $prodotto_id ] = 'gia_in_uso';
 				continue;
 			}
-			foreach ( SeoSnapshot::valori_da_ripristinare( $snapshot ) as $campo => $valore ) {
+			foreach ( $risultato['valori'] as $campo => $valore ) {
 				if ( '' === $valore ) {
 					delete_post_meta( $prodotto_id, self::CAMPI_YOAST[ $campo ] );
 				} else {
 					update_post_meta( $prodotto_id, self::CAMPI_YOAST[ $campo ], $valore );
 				}
 			}
-			delete_post_meta( $prodotto_id, SeoSnapshot::META_KEY );
+			update_post_meta( $prodotto_id, SeoSnapshot::META_KEY, $risultato['snapshot'] );
 			$esiti[ $prodotto_id ] = 'ripristinato';
 		}
 
 		return new WP_REST_Response( $esiti, 200 );
+	}
+
+	/**
+	 * Usa i valori attuali come nuova base di uno o piu' prodotti (la base
+	 * non e' piu' lo stato originale di Yoast). Esiti: "impostata",
+	 * "nessuno_snapshot", "non_trovato".
+	 *
+	 * @param WP_REST_Request $request Richiesta REST in arrivo.
+	 */
+	public static function handle_imposta_base( WP_REST_Request $request ): WP_REST_Response {
+		$esiti = array();
+		foreach ( self::ids( $request ) as $prodotto_id ) {
+			$snapshot = self::snapshot_di( $prodotto_id, $esiti );
+			if ( null === $snapshot ) {
+				continue;
+			}
+			update_post_meta(
+				$prodotto_id,
+				SeoSnapshot::META_KEY,
+				SeoSnapshot::imposta_base( $snapshot, self::valori_attuali( $prodotto_id ), gmdate( 'c' ) )
+			);
+			$esiti[ $prodotto_id ] = 'impostata';
+		}
+
+		return new WP_REST_Response( $esiti, 200 );
+	}
+
+	/**
+	 * Gli id dei prodotti della richiesta, senza doppioni.
+	 *
+	 * @param WP_REST_Request $request Richiesta REST in arrivo.
+	 */
+	private static function ids( WP_REST_Request $request ): array {
+		return array_unique( array_map( 'intval', (array) $request->get_param( 'ids' ) ) );
+	}
+
+	/**
+	 * Le versioni salvate di un prodotto. Se il prodotto non esiste o non ne
+	 * ha, scrive l'esito in $esiti e restituisce null.
+	 *
+	 * @param int   $prodotto_id Id del prodotto.
+	 * @param array $esiti       Esiti per id, aggiornati per riferimento.
+	 */
+	private static function snapshot_di( int $prodotto_id, array &$esiti ): ?array {
+		if ( ! wc_get_product( $prodotto_id ) ) {
+			$esiti[ $prodotto_id ] = 'non_trovato';
+			return null;
+		}
+		$snapshot = get_post_meta( $prodotto_id, SeoSnapshot::META_KEY, true );
+		if ( ! is_array( $snapshot ) || empty( $snapshot['base'] ) ) {
+			$esiti[ $prodotto_id ] = 'nessuno_snapshot';
+			return null;
+		}
+		return $snapshot;
 	}
 }
