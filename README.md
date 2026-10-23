@@ -119,10 +119,16 @@ tecnici).
    sito» e gli altri mostrano la differenza area per area, (+2) = due punti
    meglio di te, (−1) = uno peggio.
 4. **L'utente decide** se e per quali aree usare un concorrente come
-   ispirazione. L'assistente scrive testi originali e, prima di applicarli,
-   misura la somiglianza (0 = nessuna, 9 = copia) lasciando scegliere
-   all'utente il livello accettato. Le modifiche portano il nome del
-   concorrente e si annullano dalle versioni.
+   ispirazione, dal pannello «Riscrivi con ispirazione da un concorrente»: si
+   spuntano i prodotti nella prima colonna della tabella, si sceglie il sito
+   analizzato, le aree (titoli SEO e/o meta description: le due che
+   corrispondono ai campi scritti dall'assistente) e, se si vuole, il livello
+   massimo di somiglianza accettato (da 0, nessuna, a 9, copia). Il pannello
+   non scrive niente: prepara un messaggio da incollare all'assistente, che
+   scrive testi originali, li controlla con `controlla_somiglianza` prima di
+   applicarli (se il livello non è stato fissato lo sceglie l'utente dopo aver
+   visto i risultati) e li applica indicando il concorrente come origine. Le
+   modifiche si annullano dalle versioni.
 
 Il punteggio misura solo la struttura (non posizionamento, autorevolezza,
 velocità né qualità dei testi) ed è solo un riferimento: un sito mediocre può

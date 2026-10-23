@@ -2,7 +2,6 @@ import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, Spinner } from '@wordpress/components';
 import { Fragment, useState } from '@wordpress/element';
 import GuidaSeo from './GuidaSeo';
-import useRestFetch from '../hooks/useRestFetch';
 
 const AREE = [
 	{ chiave: 'titoli', etichetta: 'Titoli' },
@@ -95,14 +94,14 @@ function Dettaglio( { analisi, storico } ) {
 
 /**
  * Punteggi SEO dei siti analizzati (concorrenti e, se analizzato, il sito
- * dell'utente) per area, da 0 a 9. L'analisi la fa il server MCP sul PC
+ * dell'utente) per area, da 0 a 9. I dati arrivano dalla tab SEO, che li
+ * condivide con il pannello di ispirazione. L'analisi la fa il server MCP sul PC
  * dell'utente, su richiesta al suo assistente AI, e ne manda qui il
  * riepilogo: questa sezione lo mostra soltanto e lascia toglierlo. Il
  * punteggio e' un riferimento, non un obbligo: decide l'utente se e per
  * quali aree usare un sito come ispirazione.
  */
-export default function ConcorrentiSezione() {
-	const { dati: righe, caricamento, errore, carica } = useRestFetch( () => '/push-contempt/v1/concorrenti' );
+export default function ConcorrentiSezione( { righe, caricamento, errore, carica } ) {
 	const [ aperto, setAperto ] = useState( null );
 	const [ erroreElimina, setErroreElimina ] = useState( null );
 

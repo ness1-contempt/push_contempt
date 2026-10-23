@@ -23,6 +23,7 @@ class AnalisiConcorrentiTest extends TestCase {
 	private function riepilogo( array $override = array() ): array {
 		$base = array(
 			'sito'      => 'Euronics.it',
+			'url'       => 'https://www.euronics.it/telefonia/smartphone-e-cellulari/',
 			'perimetro' => '/telefonia/smartphone-e-cellulari',
 			'data'      => '2026-10-23',
 			'metodo'    => 'http',
@@ -69,6 +70,7 @@ class AnalisiConcorrentiTest extends TestCase {
 		$analisi = AnalisiConcorrenti::normalizza( $this->riepilogo() );
 		$this->assertSame( 'euronics.it', $analisi['sito'] );
 		$this->assertSame( 8, $analisi['punteggio'] );
+		$this->assertSame( 'https://www.euronics.it/telefonia/smartphone-e-cellulari/', $analisi['url'] );
 		$this->assertSame( array( 'titoli', 'meta_description' ), array_keys( $analisi['aree'] ) );
 		$this->assertFalse( $analisi['proprio'] );
 		$this->assertSame( 0.93, $analisi['aree']['titoli']['criteri'][0]['valore'] );

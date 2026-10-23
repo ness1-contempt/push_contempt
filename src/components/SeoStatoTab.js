@@ -1,8 +1,9 @@
 import apiFetch from '@wordpress/api-fetch';
-import { Button, CheckboxControl, Notice, SelectControl, Spinner } from '@wordpress/components';
+import { Button, Notice, SelectControl, Spinner } from '@wordpress/components';
 import { Fragment, useState } from '@wordpress/element';
 import ConcorrentiSezione from './ConcorrentiSezione';
 import GuidaSeo from './GuidaSeo';
+import IspirazioneConcorrente from './IspirazioneConcorrente';
 import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
 import StatoCollegamentoAI from './StatoCollegamentoAI';
@@ -109,6 +110,7 @@ export default function SeoStatoTab( { onNavigate } ) {
 	const { dati: prodotti, caricamento, errore, carica } = useRestFetch(
 		() => '/push-contempt/v1/seo/stato'
 	);
+	const concorrenti = useRestFetch( () => '/push-contempt/v1/concorrenti' );
 	const [ prodottoSelezionato, setProdottoSelezionato ] = useState( null );
 	const [ filtro, setFiltro ] = useState( 'tutti' );
 	const [ selezionati, setSelezionati ] = useState( new Set() );
@@ -118,6 +120,8 @@ export default function SeoStatoTab( { onNavigate } ) {
 
 	const prodottiFiltrati = prodotti ? prodotti.filter( FILTRI[ filtro ] ) : null;
 	const conVersioniVisibili = prodottiFiltrati ? prodottiFiltrati.filter( ( p ) => p.versioni ) : [];
+	const prodottiScelti = prodotti ? prodotti.filter( ( p ) => selezionati.has( p.id ) ) : [];
+	const sceltiConVersioni = prodottiScelti.filter( ( p ) => p.versioni );
 
 	const attivaSelezione = ( id, attiva ) => {
 		setSelezionati( ( precedenti ) => {
@@ -175,6 +179,14 @@ export default function SeoStatoTab( { onNavigate } ) {
 				<Button variant="primary" onClick={ carica } isBusy={ caricamento }>
 					Aggiorna
 				</Button>
+				{ prodottiFiltrati && prodottiFiltrati.length > 0 && (
+					<Button
+						variant="tertiary"
+						onClick={ () => setSelezionati( new Set( prodottiFiltrati.map( ( p ) => p.id ) ) ) }
+					>
+						Seleziona tutti i visibili
+					</Button>
+				) }
 				{ conVersioniVisibili.length > 0 && (
 					<Button
 						variant="tertiary"
@@ -200,14 +212,18 @@ export default function SeoStatoTab( { onNavigate } ) {
 
 			{ selezionati.size > 0 && (
 				<div style={ { margin: '0 0 12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } }>
-					<strong>{ selezionati.size } selezionati:</strong>
+					<strong>{ selezionati.size } selezionati</strong>
+					<span style={ { color: '#50575e' } }>
+						({ sceltiConVersioni.length } con versioni salvate: le azioni sulle versioni riguardano solo
+						quelli)
+					</span>
 					{ [ 'base', 'precedente', 'nuova_base' ].map( ( azione ) => (
 						<Button
 							key={ azione }
 							variant="secondary"
 							isBusy={ inCorso }
-							disabled={ inCorso }
-							onClick={ () => esegui( azione, Array.from( selezionati ) ) }
+							disabled={ inCorso || 0 === sceltiConVersioni.length }
+							onClick={ () => esegui( azione, sceltiConVersioni.map( ( p ) => p.id ) ) }
 						>
 							{ { base: 'Torna alla base', precedente: 'Torna al precedente', nuova_base: 'Usa l\'attuale come base' }[ azione ] }
 						</Button>
@@ -230,6 +246,9 @@ export default function SeoStatoTab( { onNavigate } ) {
 				<table className="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
+							<th style={ { width: '34px' } }>
+								<span className="screen-reader-text">Seleziona</span>
+							</th>
 							<th>Prodotto</th>
 							<th>Stato</th>
 							<th>Inserito</th>
@@ -244,6 +263,14 @@ export default function SeoStatoTab( { onNavigate } ) {
 						{ prodottiFiltrati.map( ( prodotto ) => (
 							<Fragment key={ prodotto.id }>
 							<tr>
+								<td>
+									<input
+										type="checkbox"
+										aria-label={ `Seleziona ${ prodotto.titolo }` }
+										checked={ selezionati.has( prodotto.id ) }
+										onChange={ ( evento ) => attivaSelezione( prodotto.id, evento.target.checked ) }
+									/>
+								</td>
 								<td>
 									<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
 								</td>
@@ -271,19 +298,12 @@ export default function SeoStatoTab( { onNavigate } ) {
 								</td>
 								<td>
 									{ prodotto.versioni ? (
-										<div>
-											<CheckboxControl
-												label="Seleziona"
-												checked={ selezionati.has( prodotto.id ) }
-												onChange={ ( attiva ) => attivaSelezione( prodotto.id, attiva ) }
-											/>
-											<Button
-												variant="link"
-												onClick={ () => setAperto( aperto === prodotto.id ? null : prodotto.id ) }
-											>
-												{ aperto === prodotto.id ? 'Nascondi versioni' : 'Mostra versioni' }
-											</Button>
-										</div>
+										<Button
+											variant="link"
+											onClick={ () => setAperto( aperto === prodotto.id ? null : prodotto.id ) }
+										>
+											{ aperto === prodotto.id ? 'Nascondi versioni' : 'Mostra versioni' }
+										</Button>
 									) : (
 										'—'
 									) }
@@ -291,7 +311,7 @@ export default function SeoStatoTab( { onNavigate } ) {
 							</tr>
 							{ prodotto.versioni && aperto === prodotto.id && (
 								<tr>
-									<td colSpan={ 8 }>
+									<td colSpan={ 9 }>
 										<VersioniSeo
 											versioni={ prodotto.versioni }
 											occupato={ inCorso }
@@ -319,7 +339,14 @@ export default function SeoStatoTab( { onNavigate } ) {
 				</div>
 			) }
 
-			<ConcorrentiSezione />
+			<IspirazioneConcorrente prodotti={ prodottiScelti } analisi={ concorrenti.dati } />
+
+			<ConcorrentiSezione
+				righe={ concorrenti.dati }
+				caricamento={ concorrenti.caricamento }
+				errore={ concorrenti.errore }
+				carica={ concorrenti.carica }
+			/>
 		</div>
 	);
 }

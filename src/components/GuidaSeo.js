@@ -77,11 +77,13 @@ function Concorrenti() {
 					altri vedi la differenza area per area: (+2) vuol dire due punti meglio di te, (−1) un punto peggio.
 				</li>
 				<li>
-					<strong>Decidi tu come usarlo.</strong> Dì all'assistente se e per quali aree vuoi prendere un
-					concorrente come ispirazione (ad esempio solo titoli e meta description). L'assistente è
-					configurato per scrivere testi originali, non copiati, e per misurare la somiglianza prima di
-					applicarli (da 0, nessuna, a 9, copia): ti mostra il risultato e il livello che accetti lo scegli
-					tu. Le modifiche portano il nome del concorrente e le puoi annullare dalle versioni.
+					<strong>Decidi tu come usarlo.</strong> Spunta i prodotti nella tabella in alto e vai al pannello
+					«Riscrivi con ispirazione da un concorrente»: scegli il sito, le aree da cui prendere ispirazione
+					(titoli SEO e/o meta description) e, se vuoi, fino a che livello di somiglianza accetti (da 0,
+					nessuna, a 9, copia). Il pannello prepara un messaggio da incollare al tuo assistente, che scrive
+					testi originali e li controlla prima di applicarli: se non hai fissato un livello, lo scegli tu
+					dopo aver visto i risultati e non viene applicato niente prima. Le modifiche portano il nome del
+					concorrente e le puoi annullare dalle versioni.
 				</li>
 			</ol>
 			<p>

@@ -62,6 +62,7 @@ class AnalisiConcorrenti {
 
 		return array(
 			'sito'      => strtolower( $sito ),
+			'url'       => self::testo( $dati['url'] ?? '', 300 ),
 			'perimetro' => self::testo( $dati['perimetro'] ?? '', 200 ),
 			'proprio'   => ! empty( $dati['proprio'] ),
 			'data'      => self::testo( $dati['data'] ?? '', 40 ),
