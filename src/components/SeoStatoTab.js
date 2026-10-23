@@ -1,6 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { Button, CheckboxControl, Notice, SelectControl, Spinner } from '@wordpress/components';
 import { useState } from '@wordpress/element';
+import ConcorrentiSezione from './ConcorrentiSezione';
 import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
 import StatoCollegamentoAI from './StatoCollegamentoAI';
@@ -107,7 +108,10 @@ export default function SeoStatoTab( { onNavigate } ) {
 		apiFetch( { path: '/push-contempt/v1/seo/ripristina', method: 'POST', data: { ids } } )
 			.then( ( esiti ) => {
 				const fatti = Object.values( esiti ).filter( ( e ) => 'ripristinato' === e ).length;
-				setEsitoRipristino( { status: 'success', testo: `Ripristinati ${ fatti } prodotti su ${ ids.length }.` } );
+				setEsitoRipristino( {
+					status: fatti === ids.length ? 'success' : 'warning',
+					testo: `Ripristinat${ 1 === fatti ? 'o 1 prodotto' : `i ${ fatti } prodotti` } su ${ ids.length }.`,
+				} );
 				setDaRipristinare( new Set() );
 				carica();
 			} )
@@ -259,6 +263,8 @@ export default function SeoStatoTab( { onNavigate } ) {
 					/>
 				</div>
 			) }
+
+			<ConcorrentiSezione />
 		</div>
 	);
 }

@@ -39,9 +39,25 @@ add_action(
 		\PushContempt\Rest\SeoStatoController::register();
 		\PushContempt\Rest\CredenzialiController::register();
 		\PushContempt\Rest\SeoProdottoController::register();
+		\PushContempt\Rest\ConcorrentiController::register();
 		\PushContempt\Rest\ProdottiController::register();
 		\PushContempt\Rest\OrdiniController::register();
 	}
+);
+
+// Le risposte REST del plugin sono dati vivi (stato SEO, analisi, ripristini): una cache di
+// pagina (LiteSpeed ne tiene anche quelle REST per giorni) mostrerebbe valori vecchi.
+add_filter(
+	'rest_post_dispatch',
+	function ( $risposta, $server, $richiesta ) {
+		if ( 0 === strpos( $richiesta->get_route(), '/push-contempt/v1' ) ) {
+			do_action( 'litespeed_control_set_nocache', 'push_contempt REST' );
+			$risposta->header( 'X-LiteSpeed-Cache-Control', 'no-cache' );
+		}
+		return $risposta;
+	},
+	10,
+	3
 );
 
 \PushContempt\Admin\MenuPage::register();
