@@ -160,6 +160,7 @@ test.describe( 'Tab SEO: riscrivere con ispirazione da un concorrente', () => {
 		await api.salvaConcorrente( riepilogo( altro ) );
 		await apriTabSeo( page );
 
+		await expect( page.getByLabel( '2. Concorrente' ).locator( 'option', { hasText: altro } ) ).toHaveCount( 1 );
 		const opzioni = await page.getByLabel( '2. Concorrente' ).locator( 'option' ).allTextContents();
 
 		expect( opzioni.some( ( o ) => o.includes( altro ) ) ).toBe( true );

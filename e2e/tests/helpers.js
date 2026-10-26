@@ -162,14 +162,16 @@ const test = base.test.extend( {
 } );
 
 /**
- * Apre la tab SEO del plugin e aspetta che la tabella dei prodotti sia caricata.
+ * Apre la tab SEO del plugin. La tabella dei prodotti compare solo se ce ne sono (su un sito
+ * appena creato non ce ne sono), quindi si aspetta la sezione dei concorrenti, che c'e' sempre:
+ * i test che hanno bisogno di una riga la aspettano da soli.
  *
  * @param {import('@playwright/test').Page} page Pagina.
  */
 async function apriTabSeo( page ) {
 	await page.goto( '/wp-admin/admin.php?page=push-contempt' );
 	await page.getByRole( 'tab', { name: 'SEO' } ).click();
-	await expect( page.getByRole( 'columnheader', { name: 'Titolo SEO' } ) ).toBeVisible();
+	await expect( page.getByRole( 'heading', { name: 'Concorrenti e confronto' } ) ).toBeVisible();
 }
 
 /**
