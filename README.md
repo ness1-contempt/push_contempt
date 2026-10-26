@@ -146,12 +146,34 @@ le prove, mai i testi delle pagine analizzate.
 | Installare le dipendenze PHP di sviluppo | `docker exec -w <percorso-plugin-nel-container> <container> composer install` |
 | Lint PHP (WPCS) | `bin/dev.sh phpcs` |
 | Fix automatico lint PHP | `bin/dev.sh phpcbf` |
-| Test PHP | `bin/dev.sh phpunit` |
+| Test PHP (logica pura) | `bin/dev.sh phpunit` |
+| Test PHP di integrazione (controller REST) | vedi sotto |
+| Test JS | `npm run test:unit` |
 
 `bin/dev.sh` esegue i comandi PHP dentro un container Docker che ha PHP
 installato (pensato per l'ambiente di sviluppo `ols-docker-env`): se il tuo
 host ha PHP nativamente, usa `composer`/`vendor/bin/phpcs`/`vendor/bin/phpunit`
 direttamente invece di passare dallo script.
+
+### Test di integrazione
+
+I controller REST si provano su WordPress e WooCommerce veri (`tests/Integration/`,
+`phpunit-integration.xml.dist`): richieste interne con `rest_do_request()`, permessi,
+validazione, meta dei prodotti e opzioni, su un database di prova. Servono WordPress e
+WooCommerce scaricati in una cartella a parte e un database vuoto **il cui nome contiene
+"test"** (la configurazione rifiuta gli altri, perché a ogni esecuzione viene svuotato):
+
+```bash
+bin/install-wp-tests.sh /tmp/wp-core          # WordPress e WooCommerce alle versioni provate in CI
+export WP_TESTS_WP_DIR=/tmp/wp-core WP_TESTS_DB_HOST=127.0.0.1 \
+       WP_TESTS_DB_NAME=wordpress_test WP_TESTS_DB_USER=<utente> WP_TESTS_DB_PASSWORD=<password>
+vendor/bin/phpunit -c phpunit-integration.xml.dist
+```
+
+Nell'ambiente `ols-docker-env` si esegue nel container `litespeed` (`bin/dev.sh php vendor/bin/phpunit -c
+phpunit-integration.xml.dist` con le variabili passate da `docker exec -e`), con `WP_TESTS_DB_HOST=mysql`. Non usare
+mai la cartella di WordPress del sito di sviluppo come `WP_TESTS_WP_DIR`: il suo `object-cache.php` punta alla
+Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerce sono fissate nel workflow.
 
 ## Struttura
 
@@ -160,7 +182,7 @@ direttamente invece di passare dallo script.
 - `includes/CatalogHealth.php` / `includes/PricingCalculator.php` — logica di calcolo pura, senza dipendenze da WordPress, testata con PHPUnit
 - `includes/Admin/MenuPage.php` — registrazione menu e caricamento della app React
 - `src/components/` — app React (`@wordpress/scripts`), una tab per ciascuna area
-- `tests/` — PHPUnit sulle classi di logica pura
+- `tests/` — PHPUnit sulle classi di logica pura; `tests/Integration/` — i controller REST su WordPress e WooCommerce veri
 
 ## Endpoint REST (namespace `push-contempt/v1`)
 
