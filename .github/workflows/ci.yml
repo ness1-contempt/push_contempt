@@ -70,6 +70,83 @@ jobs:
       - name: Test di integrazione
         run: vendor/bin/phpunit -c phpunit-integration.xml.dist
 
+  e2e:
+    # La tab SEO in un browser vero, su un sito WordPress usa-e-getta (vedi e2e/README.md).
+    runs-on: ubuntu-latest
+    env:
+      WP_VERSION: "7.1.3"
+      WC_VERSION: "11.2.1"
+      E2E_DB_HOST: 127.0.0.1
+      E2E_DB_NAME: wordpress_e2e
+      E2E_DB_USER: root
+      E2E_DB_PASSWORD: root
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_e2e
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installa PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mysqli
+          tools: composer, wp-cli
+
+      - name: Installa Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Compila il plugin
+        run: |
+          npm ci
+          npm run build
+          composer install --no-dev --optimize-autoloader --no-progress --prefer-dist
+
+      - name: Prepara il sito di prova
+        run: e2e/site.sh setup
+
+      - name: Avvia il sito
+        run: |
+          nohup e2e/site.sh serve > /tmp/e2e-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -fsS -o /dev/null http://127.0.0.1:8081/wp-login.php && exit 0
+            sleep 1
+          done
+          cat /tmp/e2e-server.log
+          exit 1
+
+      - name: Installa Playwright
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Test end-to-end
+        working-directory: e2e
+        run: npx playwright test
+
+      - name: Report in caso di errore
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
+
   js:
     runs-on: ubuntu-latest
     steps:

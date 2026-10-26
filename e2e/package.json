@@ -1,0 +1,11 @@
+{
+    "name": "push-contempt-e2e",
+    "private": true,
+    "description": "Test end-to-end della tab SEO su un sito WordPress di prova (vedi e2e/README.md)",
+    "scripts": {
+        "test": "playwright test"
+    },
+    "devDependencies": {
+        "@playwright/test": "1.64.0"
+    }
+}

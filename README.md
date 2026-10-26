@@ -149,6 +149,7 @@ le prove, mai i testi delle pagine analizzate.
 | Test PHP (logica pura) | `bin/dev.sh phpunit` |
 | Test PHP di integrazione (controller REST) | vedi sotto |
 | Test JS | `npm run test:unit` |
+| Test end-to-end della tab SEO (Playwright) | vedi `e2e/README.md` |
 
 `bin/dev.sh` esegue i comandi PHP dentro un container Docker che ha PHP
 installato (pensato per l'ambiente di sviluppo `ols-docker-env`): se il tuo
@@ -182,7 +183,7 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 - `includes/CatalogHealth.php` / `includes/PricingCalculator.php` — logica di calcolo pura, senza dipendenze da WordPress, testata con PHPUnit
 - `includes/Admin/MenuPage.php` — registrazione menu e caricamento della app React
 - `src/components/` — app React (`@wordpress/scripts`), una tab per ciascuna area
-- `tests/` — PHPUnit sulle classi di logica pura; `tests/Integration/` — i controller REST su WordPress e WooCommerce veri
+- `tests/` — PHPUnit sulle classi di logica pura; `tests/Integration/` — i controller REST su WordPress e WooCommerce veri; `e2e/` — la tab SEO in un browser (Playwright) su un sito usa-e-getta
 
 ## Endpoint REST (namespace `push-contempt/v1`)
 
