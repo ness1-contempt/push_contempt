@@ -45,6 +45,8 @@ add_action(
 		\PushContempt\Rest\LinkProdottoController::register();
 		\PushContempt\Rest\ConcorrentiController::register();
 		\PushContempt\Rest\ProdottiController::register();
+		\PushContempt\Rest\PubblicaProdottiController::register();
+		\PushContempt\Rest\CategorieController::register();
 		\PushContempt\Rest\OrdiniController::register();
 	}
 );

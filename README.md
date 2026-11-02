@@ -230,6 +230,9 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 | `/link/prodotti` | GET | riepilogo dei link di tutti i prodotti (`stato`, `solo_senza_link_in_uscita`): totali per prodotto e quanti senza link in uscita |
 | `/prodotti` | POST | crea un prodotto in bozza (titolo, descrizione, prezzo, categoria, immagini, SEO); con `tipo=variable` e `attributi` crea un variabile (una variante per combinazione, prezzo unico, senza scorte); `solo_anteprima` non scrive niente; con `percorso_categoria` (elenco di nomi dalla radice) le categorie mancanti si creano una dentro l'altra e il prodotto va nell'ultima; 409 se un nome di categoria esiste già in un altro punto |
 | `/categorie/verifica` | POST | `percorsi`: per ogni percorso di categorie cosa si farebbe (esiste / da creare / conflitto) e i nomi che compaiono in punti diversi; sola lettura |
+| `/prodotti/pubblica` | POST | pubblica bozze, in due tempi: `solo_anteprima` (predefinito) elenca `da_pubblicare`, `non_pubblicabili` e un `codice_conferma`; la pubblicazione vera lo richiede e lo rifiuta (409) se i prodotti o i loro campi SEO sono cambiati dopo l'anteprima |
+| `/categorie` | GET | albero delle categorie prodotto (id, percorso, livello, prodotti, indirizzo) |
+| `/categorie/sposta` | POST | cambia la madre di una categoria, in due tempi come sopra (`id`, `nuova_madre`, `solo_anteprima`, `codice_conferma`); rifiuta categoria predefinita, cicli e oltre 5 livelli |
 | `/prodotti/bozze` | GET | prodotti creati e non ancora pubblicati (con tipo e numero di varianti) |
 | `/credenziali` | GET/POST | stato/generazione della Application Password per `push_contempt_mcp` |
 
