@@ -64,4 +64,13 @@ add_filter(
 	3
 );
 
+add_action(
+	'plugins_loaded',
+	function () {
+		if ( class_exists( 'WooCommerce' ) ) {
+			\PushContempt\SchemaVarianti::register();
+		}
+	}
+);
+
 \PushContempt\Admin\MenuPage::register();

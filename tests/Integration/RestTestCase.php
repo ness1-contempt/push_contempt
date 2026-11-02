@@ -58,6 +58,49 @@ abstract class RestTestCase extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Un variabile Colore x Taglia con una variante per combinazione.
+	 *
+	 * @param array $prezzi Prezzo delle varianti nell'ordine Nero-M, Nero-L, Grigio-M, Grigio-L.
+	 * @param array $testo  Descrizione e descrizione breve.
+	 */
+	protected function felpa( array $prezzi = array( '30', '30', '35', '35' ), string $testo = 'Felpa nero e grigio, taglie M e L.' ): \WC_Product_Variable {
+		$colore = new \WC_Product_Attribute();
+		$colore->set_name( 'Colore' );
+		$colore->set_options( array( 'Nero', 'Grigio' ) );
+		$colore->set_visible( true );
+		$colore->set_variation( true );
+		$taglia = new \WC_Product_Attribute();
+		$taglia->set_name( 'Taglia' );
+		$taglia->set_options( array( 'M', 'L' ) );
+		$taglia->set_visible( true );
+		$taglia->set_variation( true );
+
+		$padre = new \WC_Product_Variable();
+		$padre->set_name( 'Felpa' );
+		$padre->set_status( 'publish' );
+		$padre->set_description( $testo );
+		$padre->set_attributes( array( $colore, $taglia ) );
+		$id = $padre->save();
+
+		$i = 0;
+		foreach ( array( 'Nero', 'Grigio' ) as $c ) {
+			foreach ( array( 'M', 'L' ) as $t ) {
+				$variante = new \WC_Product_Variation();
+				$variante->set_parent_id( $id );
+				$variante->set_attributes( array( 'colore' => $c, 'taglia' => $t ) );
+				if ( '' !== $prezzi[ $i ] ) {
+					$variante->set_regular_price( $prezzi[ $i ] );
+				}
+				$variante->set_status( 'publish' );
+				$variante->save();
+				++$i;
+			}
+		}
+		\WC_Product_Variable::sync( $id );
+		return wc_get_product( $id );
+	}
+
+	/**
 	 * Un prodotto semplice, con eventuali campi SEO Yoast gia' impostati.
 	 *
 	 * @param array  $yoast Campi (titolo_seo, meta_description, parola_chiave_focus).

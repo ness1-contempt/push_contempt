@@ -8,6 +8,7 @@
 namespace PushContempt\Rest;
 
 use PushContempt\AnalisiVarianti;
+use PushContempt\AttributiVarianti;
 use PushContempt\PrezzoProdotto;
 use WP_Error;
 use WP_REST_Request;
@@ -111,65 +112,6 @@ class SeoVariantiController {
 	}
 
 	/**
-	 * Valori di un attributo del padre (nomi dei termini se e' globale).
-	 *
-	 * @param \WC_Product_Attribute $attributo Attributo.
-	 *
-	 * @return string[]
-	 */
-	private static function valori_attributo( \WC_Product_Attribute $attributo ): array {
-		if ( $attributo->is_taxonomy() ) {
-			return array_map(
-				static fn( $termine ): string => (string) $termine->name,
-				(array) $attributo->get_terms()
-			);
-		}
-		return array_map( 'strval', $attributo->get_options() );
-	}
-
-	/**
-	 * Gli attributi usati per le varianti: etichetta, valori, se si vedono nella scheda.
-	 *
-	 * @param \WC_Product_Variable $prodotto Il padre.
-	 *
-	 * @return array<string, array{valori: string[], visibile: bool}>
-	 */
-	private static function attributi( \WC_Product_Variable $prodotto ): array {
-		$attributi = array();
-		foreach ( $prodotto->get_attributes() as $attributo ) {
-			if ( ! $attributo->get_variation() ) {
-				continue;
-			}
-			$attributi[ wc_attribute_label( $attributo->get_name(), $prodotto ) ] = array(
-				'valori'   => self::valori_attributo( $attributo ),
-				'visibile' => (bool) $attributo->get_visible(),
-			);
-		}
-		return $attributi;
-	}
-
-	/**
-	 * Attributi di una variante: etichetta => valore ("" se "qualsiasi").
-	 *
-	 * @param \WC_Product_Variation $variante Variante.
-	 * @param \WC_Product_Variable  $padre    Il padre.
-	 *
-	 * @return array<string, string>
-	 */
-	private static function attributi_variante( \WC_Product_Variation $variante, \WC_Product_Variable $padre ): array {
-		$risultato = array();
-		foreach ( $variante->get_attributes() as $chiave => $valore ) {
-			$valore = (string) $valore;
-			if ( '' !== $valore && taxonomy_exists( $chiave ) ) {
-				$termine = get_term_by( 'slug', $valore, $chiave );
-				$valore  = $termine ? (string) $termine->name : $valore;
-			}
-			$risultato[ wc_attribute_label( $chiave, $padre ) ] = $valore;
-		}
-		return $risultato;
-	}
-
-	/**
 	 * Le varianti del padre, ciascuna con i campi che servono alla SEO.
 	 *
 	 * @param \WC_Product_Variable $prodotto Il padre.
@@ -186,7 +128,7 @@ class SeoVariantiController {
 				'id'               => (int) $variante_id,
 				'stato'            => $variante->get_status(),
 				'etichetta'        => wc_get_formatted_variation( $variante, true ),
-				'attributi'        => self::attributi_variante( $variante, $prodotto ),
+				'attributi'        => AttributiVarianti::della_variante( $variante, $prodotto ),
 				'prezzo'           => (string) $variante->get_price(),
 				'in_magazzino'     => $variante->is_in_stock(),
 				'sku'              => (string) $variante->get_sku( 'edit' ),
@@ -225,7 +167,7 @@ class SeoVariantiController {
 		$titolo_seo    = (string) get_post_meta( $id, '_yoast_wpseo_title', true );
 		$meta          = (string) get_post_meta( $id, '_yoast_wpseo_metadesc', true );
 		$parola_chiave = (string) get_post_meta( $id, '_yoast_wpseo_focuskw', true );
-		$attributi     = self::attributi( $prodotto );
+		$attributi     = AttributiVarianti::del_padre( $prodotto );
 		$varianti      = self::varianti( $prodotto );
 
 		$analisi = AnalisiVarianti::analizza(
