@@ -63,6 +63,7 @@ class SeoStatoController {
 			$meta_description    = get_post_meta( $prodotto->get_id(), '_yoast_wpseo_metadesc', true );
 			$parola_chiave_focus = get_post_meta( $prodotto->get_id(), '_yoast_wpseo_focuskw', true );
 			$creato              = $prodotto->get_date_created();
+			$varianti            = $prodotto instanceof \WC_Product_Variable ? SeoVariantiController::lettura( $prodotto )['conteggio'] : null;
 
 			$risultato[] = array_merge(
 				PrezzoProdotto::di( $prodotto ),
@@ -76,6 +77,7 @@ class SeoStatoController {
 					'parola_chiave_focus'        => '' !== $parola_chiave_focus ? $parola_chiave_focus : null,
 					'lunghezza_titolo_seo'       => strlen( (string) $titolo_seo ),
 					'lunghezza_meta_description' => strlen( (string) $meta_description ),
+					'problemi_varianti'          => $varianti,
 					'versioni'                   => SeoSnapshot::per_risposta(
 						get_post_meta( $prodotto->get_id(), SeoSnapshot::META_KEY, true ),
 						array(

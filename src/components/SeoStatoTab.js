@@ -11,6 +11,9 @@ import StatoCollegamentoAI from './StatoCollegamentoAI';
 import VersioniTesti from './VersioniTesti';
 import useAzioniVersioni from '../hooks/useAzioniVersioni';
 import useRestFetch from '../hooks/useRestFetch';
+import InterruttoreSchemaVarianti from './InterruttoreSchemaVarianti';
+import VariantiDettaglio from './VariantiDettaglio';
+import { haProblemiVarianti, messaggioProdottoVariabile } from '../lib/saluteVarianti';
 
 const TRE_ORE_IN_MS = 3 * 60 * 60 * 1000;
 
@@ -40,6 +43,8 @@ const FILTRI = {
 	bozza: ( prodotto ) => 'draft' === prodotto.stato,
 	consolidato: ( prodotto ) => 'publish' === prodotto.stato && etaInMs( prodotto ) > TRE_ORE_IN_MS,
 	con_versioni: ( prodotto ) => !! prodotto.versioni,
+	variabili: ( prodotto ) => 'variable' === prodotto.tipo,
+	varianti_con_problemi: ( prodotto ) => haProblemiVarianti( prodotto.problemi_varianti ),
 };
 
 const OPZIONI_FILTRO = [
@@ -48,6 +53,8 @@ const OPZIONI_FILTRO = [
 	{ label: 'In bozza', value: 'bozza' },
 	{ label: 'Catalogo consolidato (da più di 3 ore)', value: 'consolidato' },
 	{ label: 'Con versioni salvate (base e precedente)', value: 'con_versioni' },
+	{ label: 'Prodotti variabili', value: 'variabili' },
+	{ label: 'Variabili con problemi nelle varianti', value: 'varianti_con_problemi' },
 ];
 
 const AVVISO_SCAMBIO = 'La versione attuale diventerà il «precedente»: potrai sempre tornarci.';
@@ -92,6 +99,9 @@ const AZIONI = {
  * @param {Object} prodotto Riga della tabella (id, titolo, parola_chiave_focus, ...).
  */
 function messaggioPronto( prodotto ) {
+	if ( 'variable' === prodotto.tipo ) {
+		return messaggioProdottoVariabile( prodotto );
+	}
 	return (
 		`Scrivi un titolo SEO e una meta description ottimizzati per il prodotto "${ prodotto.titolo }" ` +
 		`(ID ${ prodotto.id }) su WooCommerce - parola chiave focus attuale: ` +
@@ -117,6 +127,7 @@ export default function SeoStatoTab( { onNavigate } ) {
 	const [ filtro, setFiltro ] = useState( 'tutti' );
 	const [ selezionati, setSelezionati ] = useState( new Set() );
 	const [ aperto, setAperto ] = useState( null );
+	const [ variantiAperte, setVariantiAperte ] = useState( null );
 
 	const prodottiFiltrati = prodotti ? prodotti.filter( FILTRI[ filtro ] ) : null;
 	const conVersioniVisibili = prodottiFiltrati ? prodottiFiltrati.filter( ( p ) => p.versioni ) : [];
@@ -153,6 +164,8 @@ export default function SeoStatoTab( { onNavigate } ) {
 			<div style={ { marginTop: '16px' } }>
 				<GuidaSeo argomento="versioni" />
 			</div>
+
+			<InterruttoreSchemaVarianti />
 
 			<div style={ { margin: '16px 0', display: 'flex', gap: '16px', alignItems: 'flex-end' } }>
 				<Button variant="primary" onClick={ carica } isBusy={ caricamento }>
@@ -240,6 +253,14 @@ export default function SeoStatoTab( { onNavigate } ) {
 								</td>
 								<td>
 									<CellaTipoPrezzo prodotto={ prodotto } />
+									{ prodotto.problemi_varianti && (
+										<Button
+											variant="link"
+											onClick={ () => setVariantiAperte( variantiAperte === prodotto.id ? null : prodotto.id ) }
+										>
+											{ variantiAperte === prodotto.id ? 'Nascondi varianti' : 'Mostra varianti' }
+										</Button>
+									) }
 								</td>
 								<td>{ 'draft' === prodotto.stato ? 'Bozza' : 'Pubblicato' }</td>
 								<td>
@@ -276,6 +297,13 @@ export default function SeoStatoTab( { onNavigate } ) {
 									) }
 								</td>
 							</tr>
+							{ prodotto.problemi_varianti && variantiAperte === prodotto.id && (
+								<tr>
+									<td colSpan={ 10 }>
+										<VariantiDettaglio id={ prodotto.id } />
+									</td>
+								</tr>
+							) }
 							{ prodotto.versioni && aperto === prodotto.id && (
 								<tr>
 									<td colSpan={ 10 }>

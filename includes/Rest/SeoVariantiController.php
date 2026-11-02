@@ -10,6 +10,7 @@ namespace PushContempt\Rest;
 use PushContempt\AnalisiVarianti;
 use PushContempt\AttributiVarianti;
 use PushContempt\PrezzoProdotto;
+use PushContempt\SchemaVarianti;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -76,6 +77,49 @@ class SeoVariantiController {
 				),
 			)
 		);
+		self::registra_interruttore();
+	}
+
+	/**
+	 * Interruttore dei dati strutturati ProductGroup (vedi SchemaVarianti).
+	 */
+	private static function registra_interruttore(): void {
+		register_rest_route(
+			'push-contempt/v1',
+			'/seo/schema-varianti',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( self::class, 'handle_interruttore' ),
+					'permission_callback' => array( self::class, 'permission' ),
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( self::class, 'handle_interruttore' ),
+					'permission_callback' => array( self::class, 'permission' ),
+					'args'                => array(
+						'attivo' => array(
+							'type'     => 'boolean',
+							'required' => true,
+						),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Dice se i dati strutturati dei variabili sono accesi; con POST li accende o spegne.
+	 *
+	 * @param WP_REST_Request $request Richiesta REST in arrivo.
+	 */
+	public static function handle_interruttore( WP_REST_Request $request ): WP_REST_Response {
+		if ( 'POST' === $request->get_method() ) {
+			update_option( SchemaVarianti::OPZIONE, $request->get_param( 'attivo' ) ? 'si' : 'no' );
+			// Le pagine in cache hanno ancora il vecchio markup.
+			do_action( 'litespeed_purge_all' );
+		}
+		return new WP_REST_Response( array( 'attivo' => SchemaVarianti::attiva() ), 200 );
 	}
 
 	/**

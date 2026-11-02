@@ -78,4 +78,15 @@ class SeoStatoControllerTest extends RestTestCase {
 		$this->assertSame( SeoSnapshot::ORIGINE_MANUALE, $versioni['attuale']['origine'] );
 		$this->assertSame( 'Cambiata a mano', $versioni['attuale']['meta_description'] );
 	}
+
+	public function test_i_variabili_hanno_il_riepilogo_dei_problemi_delle_varianti_gli_altri_null(): void {
+		$semplice = $this->prodotto();
+		$padre    = $this->felpa( array( '30', '', '35', '35' ) );
+
+		$righe = array_column( $this->richiesta( 'GET', '/seo/stato' )->get_data(), null, 'id' );
+
+		$this->assertNull( $righe[ $semplice ]['problemi_varianti'] );
+		$this->assertSame( 1, $righe[ $padre->get_id() ]['problemi_varianti']['errori'] );
+		$this->assertGreaterThanOrEqual( 1, $righe[ $padre->get_id() ]['problemi_varianti']['suggerimenti'] );
+	}
 }

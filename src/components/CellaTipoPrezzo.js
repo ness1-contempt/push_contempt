@@ -1,3 +1,4 @@
+import { haProblemiVarianti, etichettaSaluteVarianti } from '../lib/saluteVarianti';
 import { etichettaPrezzo, etichettaTipo, etichettaVarianti } from '../lib/tipoPrezzo';
 
 /**
@@ -14,6 +15,11 @@ export default function CellaTipoPrezzo( { prodotto } ) {
 		<>
 			<div>{ [ etichettaTipo( prodotto.tipo ), varianti ].filter( Boolean ).join( ' · ' ) }</div>
 			<div style={ { color: '#50575e' } }>{ etichettaPrezzo( prodotto ) }</div>
+			{ prodotto.problemi_varianti && (
+				<div style={ { color: haProblemiVarianti( prodotto.problemi_varianti ) ? '#996800' : '#00a32a' } }>
+					{ etichettaSaluteVarianti( prodotto.problemi_varianti ) }
+				</div>
+			) }
 		</>
 	);
 }

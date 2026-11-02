@@ -171,4 +171,21 @@ class SeoVariantiControllerTest extends RestTestCase {
 		$this->assertSame( 'Felpa nera', $lettura['varianti'][0]['alt_immagine'] );
 		$this->assertFalse( $lettura['varianti'][1]['immagine_propria'] );
 	}
+
+	public function test_l_interruttore_dei_dati_strutturati_si_legge_e_si_cambia(): void {
+		delete_option( \PushContempt\SchemaVarianti::OPZIONE );
+		$this->assertTrue( $this->richiesta( 'GET', '/seo/schema-varianti' )->get_data()['attivo'], 'Di default e\' acceso.' );
+
+		$spento = $this->richiesta( 'POST', '/seo/schema-varianti', array( 'attivo' => false ), true );
+		$this->assertSame( 200, $spento->get_status() );
+		$this->assertFalse( $spento->get_data()['attivo'] );
+		$this->assertSame( 'no', get_option( \PushContempt\SchemaVarianti::OPZIONE ) );
+
+		$this->assertTrue( $this->richiesta( 'POST', '/seo/schema-varianti', array( 'attivo' => true ), true )->get_data()['attivo'] );
+		$this->assertSame( 400, $this->richiesta( 'POST', '/seo/schema-varianti', array(), true )->get_status() );
+
+		$this->accedi_come( 'subscriber' );
+		$this->assertSame( 403, $this->richiesta( 'GET', '/seo/schema-varianti' )->get_status() );
+		delete_option( \PushContempt\SchemaVarianti::OPZIONE );
+	}
 }
