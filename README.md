@@ -197,13 +197,15 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 | `/prezzi/calcola` | GET | anteprima aggiornamento prezzi per categoria |
 | `/prezzi/applica` | POST | applica l'aggiornamento prezzi approvato |
 | `/seo/stato` | GET | vista d'insieme SEO su tutto il catalogo |
-| `/seo/prodotto` | GET/POST | lettura/scrittura campi Yoast di un prodotto (tiene base e precedente) |
+| `/seo/prodotto` | GET/POST | lettura/scrittura campi Yoast di un prodotto (tiene base e precedente); in lettura anche tipo e prezzo (per i variabili l'intervallo `prezzo_min`/`prezzo_max`) |
 | `/concorrenti` | GET/POST/DELETE | analisi SEO dei siti concorrenti inviate dal server MCP (punteggi per area), mostrate nella tab SEO |
 | `/seo/ripristina` | POST | `ids` + `versione` (`base` o `precedente`): rimette quella versione dei campi Yoast; la versione lasciata diventa il precedente |
 | `/seo/base` | POST | `ids`: usa i valori attuali come nuova base (non è più l'originale di Yoast) |
 | `/descrizione/prodotto` | GET/POST | lettura/scrittura di descrizione e descrizione breve (HTML filtrato con `wp_kses_post`); tiene base e precedente |
 | `/descrizione/ripristina` | POST | `ids` + `versione` (`base` o `precedente`): rimette quella versione delle descrizioni; la versione lasciata diventa il precedente |
 | `/alt/prodotto` | GET/POST | testo ALT dell'immagine in evidenza e della galleria; in scrittura rifiuta gli allegati che non sono del prodotto |
+| `/prodotti` | GET | elenco del catalogo con ricerca per titolo: sku, scorte, tipo e prezzo (variabili e raggruppati con intervallo `prezzo_min`/`prezzo_max`) |
+| `/link/prodotto` | GET | link della descrizione divisi in interni, esterni e altri, con `ha_link_in_uscita` |
 | `/prodotti` | POST | crea un prodotto in bozza (titolo, descrizione, prezzo, categoria, immagini, SEO) |
 | `/prodotti/bozze` | GET | prodotti creati e non ancora pubblicati |
 | `/credenziali` | GET/POST | stato/generazione della Application Password per `push_contempt_mcp` |

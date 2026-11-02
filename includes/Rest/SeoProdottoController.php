@@ -7,6 +7,7 @@
 
 namespace PushContempt\Rest;
 
+use PushContempt\PrezzoProdotto;
 use PushContempt\SeoSnapshot;
 use WP_Error;
 use WP_REST_Request;
@@ -145,7 +146,7 @@ class SeoProdottoController {
 	}
 
 	/**
-	 * Titolo/descrizione/prezzo del prodotto piu' i campi Yoast attuali.
+	 * Titolo/descrizione/tipo e prezzo del prodotto piu' i campi Yoast attuali.
 	 *
 	 * @param WP_REST_Request $request Richiesta REST in arrivo.
 	 *
@@ -162,8 +163,9 @@ class SeoProdottoController {
 			'id'          => $prodotto_id,
 			'titolo'      => $prodotto->get_name(),
 			'descrizione' => $prodotto->get_description(),
-			'prezzo'      => $prodotto->get_price(),
 		);
+		// Tipo, prezzo e (per i variabili) l'intervallo: vedi PrezzoProdotto.
+		$campi = array_merge( $campi, PrezzoProdotto::di( $prodotto ) );
 		foreach ( self::CAMPI_YOAST as $campo => $meta_key ) {
 			$valore          = get_post_meta( $prodotto_id, $meta_key, true );
 			$campi[ $campo ] = '' !== $valore ? $valore : null;

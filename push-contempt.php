@@ -41,6 +41,7 @@ add_action(
 		\PushContempt\Rest\SeoProdottoController::register();
 		\PushContempt\Rest\DescrizioneProdottoController::register();
 		\PushContempt\Rest\AltImmaginiController::register();
+		\PushContempt\Rest\LinkProdottoController::register();
 		\PushContempt\Rest\ConcorrentiController::register();
 		\PushContempt\Rest\ProdottiController::register();
 		\PushContempt\Rest\OrdiniController::register();

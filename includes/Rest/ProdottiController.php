@@ -7,13 +7,14 @@
 
 namespace PushContempt\Rest;
 
+use PushContempt\PrezzoProdotto;
 use WC_Product_Simple;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
 
 /**
- * Tre rotte: GET /prodotti elenca il catalogo (titolo, sku, prezzo, scorte -
+ * Tre rotte: GET /prodotti elenca il catalogo (titolo, sku, tipo, prezzo o intervallo di prezzo, scorte -
  * usato anche per il confronto nomi di scansiona_cartella_prodotti, cosi'
  * non serve piu' un accesso diretto al DB da push_contempt_mcp), POST
  * /prodotti crea un prodotto semplice in BOZZA (mai pubblicato direttamente:
@@ -131,29 +132,43 @@ class ProdottiController {
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ricerca per sottostringa sul titolo, non esprimibile con wc_get_products(); risultato non cacheable (serve sempre fresco).
-		$righe = $wpdb->get_results(
+		$ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"
-				SELECT
-					p.ID AS id,
-					p.post_title AS titolo,
-					p.post_status AS stato,
-					MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS sku,
-					MAX(CASE WHEN pm.meta_key = '_price' THEN pm.meta_value END) AS prezzo,
-					MAX(CASE WHEN pm.meta_key = '_stock' THEN pm.meta_value END) AS scorte,
-					MAX(CASE WHEN pm.meta_key = '_stock_status' THEN pm.meta_value END) AS stato_scorte
+				SELECT p.ID
 				FROM {$wpdb->posts} p
-				LEFT JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID
 				WHERE p.post_type = 'product' AND p.post_title LIKE %s
-				GROUP BY p.ID
 				ORDER BY p.post_title
 				LIMIT %d
 				",
 				'%' . $wpdb->esc_like( $ricerca ) . '%',
 				$limite
-			),
-			ARRAY_A
+			)
 		);
+
+		// Tipo, prezzi e scorte si leggono dall'oggetto prodotto di WooCommerce, non dai meta
+		// grezzi: un variabile ha piu' righe `_price` (minimo e massimo), vedi PrezzoProdotto.
+		update_meta_cache( 'post', $ids );
+		$righe = array();
+		foreach ( $ids as $id ) {
+			$prodotto = wc_get_product( (int) $id );
+			if ( ! $prodotto ) {
+				continue;
+			}
+			$righe[] = array_merge(
+				array(
+					'id'     => $prodotto->get_id(),
+					'titolo' => $prodotto->get_name(),
+					'stato'  => $prodotto->get_status(),
+					'sku'    => '' !== $prodotto->get_sku() ? $prodotto->get_sku() : null,
+				),
+				PrezzoProdotto::di( $prodotto ),
+				array(
+					'scorte'       => $prodotto->get_manage_stock() ? $prodotto->get_stock_quantity() : null,
+					'stato_scorte' => $prodotto->get_stock_status(),
+				)
+			);
+		}
 
 		return new WP_REST_Response( $righe, 200 );
 	}
