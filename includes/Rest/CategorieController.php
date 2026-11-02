@@ -8,6 +8,7 @@
 namespace PushContempt\Rest;
 
 use PushContempt\ConfermaAzione;
+use PushContempt\NuovaCategoria;
 use PushContempt\SpostamentoCategoria;
 use WP_Error;
 use WP_REST_Request;
@@ -15,6 +16,7 @@ use WP_REST_Response;
 
 /**
  * GET `/categorie` elenca le categorie prodotto con percorso e numero di prodotti.
+ * POST `/categorie` ne crea una da sola (anteprima di default).
  * POST `/categorie/sposta` cambia la categoria madre, in due tempi: con
  * `solo_anteprima` (il predefinito) non cambia niente e dice cosa succederebbe,
  * compreso come cambia l'indirizzo, e restituisce un `codice_conferma`; l'azione
@@ -36,9 +38,31 @@ class CategorieController {
 			'push-contempt/v1',
 			'/categorie',
 			array(
-				'methods'             => 'GET',
-				'callback'            => array( self::class, 'handle_elenco' ),
-				'permission_callback' => array( self::class, 'permission' ),
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( self::class, 'handle_elenco' ),
+					'permission_callback' => array( self::class, 'permission' ),
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( self::class, 'handle_crea' ),
+					'permission_callback' => array( self::class, 'permission' ),
+					'args'                => array(
+						'nome'           => array(
+							'type'     => 'string',
+							'required' => true,
+						),
+						'madre'          => array(
+							'type'    => 'integer',
+							'default' => 0,
+							'minimum' => 0,
+						),
+						'solo_anteprima' => array(
+							'type'    => 'boolean',
+							'default' => true,
+						),
+					),
+				),
 			)
 		);
 		register_rest_route(
@@ -130,6 +154,57 @@ class CategorieController {
 		}
 		usort( $righe, static fn( array $a, array $b ): int => strcmp( $a['percorso'], $b['percorso'] ) );
 		return new WP_REST_Response( $righe, 200 );
+	}
+
+	/**
+	 * Crea una categoria da sola (sotto una madre o alla radice). Anteprima di default; una
+	 * categoria vuota non e' visibile a nessuno, quindi qui non serve il codice di conferma.
+	 *
+	 * @param WP_REST_Request $request Richiesta REST in arrivo.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function handle_crea( WP_REST_Request $request ) {
+		$madre     = (int) $request->get_param( 'madre' );
+		$categorie = self::categorie();
+
+		$esito = NuovaCategoria::pianifica( $categorie, $request->get_param( 'nome' ), $madre );
+		if ( isset( $esito['errore'] ) ) {
+			return new WP_Error( 'push_contempt_' . $esito['errore']['codice'], $esito['errore']['messaggio'], array( 'status' => $esito['errore']['stato'] ) );
+		}
+		$piano = $esito['piano'];
+
+		if ( $request->get_param( 'solo_anteprima' ) ) {
+			return new WP_REST_Response(
+				array(
+					'solo_anteprima' => true,
+					'nome'           => $piano['nome'],
+					'madre'          => $madre,
+					'percorso_dopo'  => $piano['percorso_dopo'],
+					'livello'        => $piano['livello'],
+				),
+				200
+			);
+		}
+
+		$termine = wp_insert_term( $piano['nome'], 'product_cat', array( 'parent' => $madre ) );
+		if ( is_wp_error( $termine ) ) {
+			$stato = 'term_exists' === $termine->get_error_code() ? 409 : 500;
+			return new WP_Error( 'push_contempt_creazione_fallita', $termine->get_error_message(), array( 'status' => $stato ) );
+		}
+		$url = get_term_link( (int) $termine['term_id'], 'product_cat' );
+
+		return new WP_REST_Response(
+			array(
+				'creata'   => true,
+				'id'       => (int) $termine['term_id'],
+				'nome'     => $piano['nome'],
+				'percorso' => $piano['percorso_dopo'],
+				'livello'  => $piano['livello'],
+				'url'      => is_wp_error( $url ) ? null : $url,
+			),
+			200
+		);
 	}
 
 	/**

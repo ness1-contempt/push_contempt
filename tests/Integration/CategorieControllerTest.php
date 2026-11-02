@@ -185,4 +185,65 @@ class CategorieControllerTest extends RestTestCase {
 		$this->assertSame( 403, $this->richiesta( 'GET', '/categorie' )->get_status() );
 		$this->assertSame( 403, $this->sposta( $a, $b )->get_status() );
 	}
+
+	/**
+	 * Chiama POST /categorie (in JSON, come fa il server MCP).
+	 *
+	 * @param string $nome      Nome.
+	 * @param int    $madre     Madre.
+	 * @param bool   $anteprima Se true non crea.
+	 */
+	private function crea( string $nome, int $madre = 0, bool $anteprima = true ) {
+		return $this->richiesta( 'POST', '/categorie', array( 'nome' => $nome, 'madre' => $madre, 'solo_anteprima' => $anteprima ), true );
+	}
+
+	public function test_creare_una_categoria_in_anteprima_non_la_crea(): void {
+		$dati = $this->crea( 'Indumenti' )->get_data();
+
+		$this->assertTrue( $dati['solo_anteprima'] );
+		$this->assertSame( 'Indumenti', $dati['percorso_dopo'] );
+		$this->assertNull( term_exists( 'Indumenti', 'product_cat' ) );
+	}
+
+	public function test_la_creazione_vera_crea_la_categoria_alla_radice_e_sotto_una_madre(): void {
+		$radice = $this->crea( 'Indumenti', 0, false );
+		$this->assertSame( 200, $radice->get_status() );
+		$id = $radice->get_data()['id'];
+		$this->assertSame( 0, get_term( $id, 'product_cat' )->parent );
+		$this->assertNotEmpty( $radice->get_data()['url'] );
+
+		$figlia = $this->crea( 'Magliette', $id, false )->get_data();
+		$this->assertSame( 'Indumenti > Magliette', $figlia['percorso'] );
+		$this->assertSame( $id, get_term( $figlia['id'], 'product_cat' )->parent );
+	}
+
+	public function test_un_nome_gia_presente_in_qualunque_ramo_e_rifiutato_e_non_ne_crea_un_altro(): void {
+		$a = $this->categoria( 'A' );
+		$this->categoria( 'Cover', $a );
+		$prima = count( get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => false ) ) );
+
+		$this->assertSame( 409, $this->crea( 'cover', 0, false )->get_status() );
+		$this->assertSame( 409, $this->crea( 'Cover', $a, false )->get_status() );
+
+		$this->assertCount( $prima, get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => false ) ) );
+	}
+
+	public function test_creare_con_madre_inesistente_nome_vuoto_o_troppi_livelli_e_rifiutato(): void {
+		$this->assertSame( 404, $this->crea( 'Nuova', 999999, false )->get_status() );
+		$this->assertSame( 400, $this->crea( '   ', 0, false )->get_status() );
+
+		$id = 0;
+		foreach ( array( 'L1', 'L2', 'L3', 'L4', 'L5' ) as $nome ) {
+			$id = $this->categoria( $nome, $id );
+		}
+		$this->assertSame( 400, $this->crea( 'L6', $id, false )->get_status() );
+	}
+
+	public function test_creare_richiede_il_nome_e_i_permessi(): void {
+		$this->assertSame( 400, $this->richiesta( 'POST', '/categorie', array( 'madre' => 0 ), true )->get_status() );
+		$this->assertSame( 400, $this->richiesta( 'POST', '/categorie', array( 'nome' => 'X', 'madre' => -1 ), true )->get_status() );
+
+		$this->accedi_come( 'subscriber' );
+		$this->assertSame( 403, $this->crea( 'X', 0, false )->get_status() );
+	}
 }
