@@ -189,7 +189,7 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 
 | Rotta | Metodo | Cosa fa |
 |---|---|---|
-| `/scorte` | GET | prodotti esauriti o sotto soglia scorte |
+| `/scorte` | GET | prodotti esauriti o sotto soglia scorte, comprese le varianti dei variabili (`variante`, `variante_id`) |
 | `/vendite` | GET | report vendite per prodotto in un periodo |
 | `/ordini` | GET | elenco ordini per stato (nativi WooCommerce) e finestra temporale, senza dati personali |
 | `/ordini/<id>` | GET | dettaglio di un ordine, con dati del cliente |
@@ -206,6 +206,7 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 | `/alt/prodotto` | GET/POST | testo ALT dell'immagine in evidenza e della galleria; in scrittura rifiuta gli allegati che non sono del prodotto |
 | `/prodotti` | GET | elenco del catalogo con ricerca per titolo: sku, scorte, tipo e prezzo (variabili e raggruppati con intervallo `prezzo_min`/`prezzo_max`) |
 | `/link/prodotto` | GET | link della descrizione divisi in interni, esterni e altri, con `ha_link_in_uscita` |
+| `/link/prodotti` | GET | riepilogo dei link di tutti i prodotti (`stato`, `solo_senza_link_in_uscita`): totali per prodotto e quanti senza link in uscita |
 | `/prodotti` | POST | crea un prodotto in bozza (titolo, descrizione, prezzo, categoria, immagini, SEO) |
 | `/prodotti/bozze` | GET | prodotti creati e non ancora pubblicati |
 | `/credenziali` | GET/POST | stato/generazione della Application Password per `push_contempt_mcp` |

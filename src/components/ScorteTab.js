@@ -3,6 +3,7 @@ import { useState } from '@wordpress/element';
 import LinkProdotto from './LinkProdotto';
 import useRestFetch from '../hooks/useRestFetch';
 import { SOGLIA_SCORTE_DEFAULT } from '../constants';
+import etichettaScorta from '../lib/etichettaScorta';
 
 /**
  * Alert scorte: chiama direttamente la REST API del plugin, nessuna AI.
@@ -19,7 +20,8 @@ export default function ScorteTab() {
 		<div style={ { marginTop: '16px' } }>
 			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
 				Elenca i prodotti pubblicati esauriti o con scorte residue pari o sotto la soglia indicata (i prodotti
-				senza gestione scorte attiva compaiono solo se risultano esauriti). Cambia la soglia e premi "Aggiorna"
+				senza gestione scorte attiva compaiono solo se risultano esauriti). Di un prodotto variabile compaiono anche le singole
+				varianti (taglia, colore...) che hanno scorte basse o sono esaurite. Cambia la soglia e premi "Aggiorna"
 				per rivedere l'elenco; clicca su un prodotto per aprirne la scheda di modifica.
 			</p>
 			<div style={ { display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '16px' } }>
@@ -51,9 +53,9 @@ export default function ScorteTab() {
 					</thead>
 					<tbody>
 						{ prodotti.map( ( prodotto ) => (
-							<tr key={ prodotto.id }>
+							<tr key={ `${ prodotto.id }-${ prodotto.variante_id ?? '' }` }>
 								<td>
-									<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
+									<LinkProdotto id={ prodotto.id }>{ etichettaScorta( prodotto ) }</LinkProdotto>
 								</td>
 								<td>{ prodotto.sku || '—' }</td>
 								<td>{ null === prodotto.scorte ? '—' : prodotto.scorte }</td>

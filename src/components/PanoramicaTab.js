@@ -4,6 +4,7 @@ import { useEffect, useState } from '@wordpress/element';
 import BarChart from './BarChart';
 import StatCard from './StatCard';
 import { SOGLIA_DESCRIZIONE_DEFAULT, SOGLIA_SCORTE_DEFAULT } from '../constants';
+import etichettaScorta from '../lib/etichettaScorta';
 
 const COLORE_ESAURITO = '#d63638';
 const COLORE_NORMALE = '#2271b1';
@@ -52,7 +53,7 @@ export default function PanoramicaTab( { onNavigate } ) {
 
 function Riquadri( { dati, onNavigate } ) {
 	const righeScorte = dati.scorte.slice( 0, 8 ).map( ( prodotto ) => ( {
-		etichetta: prodotto.titolo,
+		etichetta: etichettaScorta( prodotto ),
 		valore: prodotto.scorte ?? 0,
 		colore: prodotto.esaurito ? COLORE_ESAURITO : COLORE_NORMALE,
 		etichettaValore: prodotto.esaurito ? 'Esaurito' : String( prodotto.scorte ),
@@ -88,7 +89,7 @@ function Riquadri( { dati, onNavigate } ) {
 			<StatCard
 				titolo="Scorte"
 				valoreGrande={ dati.scorte.length }
-				descrizione={ `Prodotti esauriti o con scorte pari o sotto ${ SOGLIA_SCORTE_DEFAULT } unita'.` }
+				descrizione={ `Prodotti (o varianti) esauriti o con scorte pari o sotto ${ SOGLIA_SCORTE_DEFAULT } unita'.` }
 				azioneLabel="Vai a Scorte →"
 				onAzione={ () => onNavigate( 'scorte' ) }
 			>

@@ -17,6 +17,11 @@ use WP_REST_Response;
  * Python): un prodotto senza gestione scorte attiva non ha un numero di
  * scorte attendibile, viene segnalato solo se il suo stato e'
  * "esaurito"/"in attesa di riapprovvigionamento", mai per soglia.
+ *
+ * Nei prodotti variabili le scorte stanno spesso sulle varianti: ogni variante
+ * pubblicata che ne ha bisogno compare come riga a se' (stesso `id` del padre,
+ * `variante_id` e `variante` valorizzati), cosi' il padre non nasconde un
+ * esaurimento che riguarda una sola taglia o colore.
  */
 class ScorteController {
 
@@ -54,7 +59,9 @@ class ScorteController {
 	}
 
 	/**
-	 * Prodotti esauriti per primi, poi per scorte crescenti.
+	 * Prodotti esauriti per primi, poi per scorte crescenti. Un prodotto
+	 * variabile compare anche con le sue varianti che hanno bisogno di
+	 * rifornimento (vedi riga_variante).
 	 *
 	 * @param WP_REST_Request $request Richiesta REST in arrivo.
 	 */
@@ -69,28 +76,66 @@ class ScorteController {
 
 		$segnalati = array();
 		foreach ( $prodotti as $prodotto ) {
-			$esaurito     = in_array( $prodotto->get_stock_status(), self::STATI_ESAURITO, true );
-			$gestisce     = $prodotto->get_manage_stock();
-			$scorte       = $gestisce ? $prodotto->get_stock_quantity() : null;
-			$scorte_basse = $gestisce && null !== $scorte && $scorte <= $soglia;
-
-			if ( ! $esaurito && ! $scorte_basse ) {
-				continue;
+			$riga = self::riga( $prodotto, $prodotto, $soglia, null );
+			if ( null !== $riga ) {
+				$segnalati[] = $riga;
 			}
-
-			$segnalati[] = array(
-				'id'           => $prodotto->get_id(),
-				'titolo'       => $prodotto->get_name(),
-				'sku'          => $prodotto->get_sku(),
-				'scorte'       => $scorte,
-				'stato_scorte' => $prodotto->get_stock_status(),
-				'esaurito'     => $esaurito,
-			);
+			if ( $prodotto instanceof \WC_Product_Variable ) {
+				foreach ( $prodotto->get_children() as $variante_id ) {
+					$variante = wc_get_product( $variante_id );
+					if ( $variante && 'publish' === $variante->get_status() ) {
+						$riga = self::riga( $prodotto, $variante, $soglia, wc_get_formatted_variation( $variante, true ) );
+						if ( null !== $riga ) {
+							$segnalati[] = $riga;
+						}
+					}
+				}
+			}
 		}
 
 		usort( $segnalati, array( self::class, 'confronta' ) );
 
 		return new WP_REST_Response( $segnalati, 200 );
+	}
+
+	/**
+	 * La riga da segnalare per un prodotto o una sua variante, o null se non serve.
+	 *
+	 * Una variante che non gestisce scorte in proprio ma le eredita dal padre
+	 * ("parent") non ha un numero suo: lo copre la riga del padre. Una che non
+	 * gestisce scorte per niente si segnala solo se e' esaurita. Una che le
+	 * gestisce in proprio segue la soglia come un prodotto qualsiasi.
+	 *
+	 * @param \WC_Product $prodotto Il prodotto (il padre, se $voce e' una variante).
+	 * @param \WC_Product $voce     Il prodotto stesso o la variante da valutare.
+	 * @param float       $soglia   Soglia scorte.
+	 * @param string|null $variante Descrizione della variante (es. "Taglia: L"), null per un prodotto.
+	 */
+	private static function riga( \WC_Product $prodotto, \WC_Product $voce, float $soglia, ?string $variante ): ?array {
+		$gestione = $voce->get_manage_stock();
+		if ( null !== $variante && 'parent' === $gestione ) {
+			return null;
+		}
+
+		$esaurito     = in_array( $voce->get_stock_status(), self::STATI_ESAURITO, true );
+		$gestisce     = (bool) $gestione;
+		$scorte       = $gestisce ? $voce->get_stock_quantity() : null;
+		$scorte_basse = $gestisce && null !== $scorte && $scorte <= $soglia;
+
+		if ( ! $esaurito && ! $scorte_basse ) {
+			return null;
+		}
+
+		return array(
+			'id'           => $prodotto->get_id(),
+			'titolo'       => $prodotto->get_name(),
+			'variante_id'  => null !== $variante ? $voce->get_id() : null,
+			'variante'     => $variante,
+			'sku'          => $voce->get_sku(),
+			'scorte'       => $scorte,
+			'stato_scorte' => $voce->get_stock_status(),
+			'esaurito'     => $esaurito,
+		);
 	}
 
 	/**
