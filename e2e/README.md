@@ -1,4 +1,4 @@
-# Test end-to-end della tab SEO
+# Test end-to-end delle tab SEO e Contenuti
 
 Playwright sulla tab SEO di wp-admin, su un **sito WordPress usa-e-getta** (WordPress + WooCommerce +
 questo plugin compilato) con un database di prova che viene svuotato a ogni `setup`. Non toccano mai il
@@ -9,6 +9,8 @@ sito (valori SEO realmente scritti).
 Scenari: elenco e filtri, le tre versioni (torna alla base, al precedente, nuova base, azioni in blocco,
 conferme annullate), tabella dei concorrenti (il tuo sito, differenze, dettaglio, eliminazione, aggiorna),
 pannello «Riscrivi con ispirazione» (scelte dell'utente, messaggio generato, copia), guide, permessi.
+Tab Contenuti: versioni e ripristino delle descrizioni, correzione degli ALT, controllo dei link, tipo e prezzo
+dei prodotti variabili.
 
 ## Prerequisiti
 

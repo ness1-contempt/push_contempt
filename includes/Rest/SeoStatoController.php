@@ -7,6 +7,7 @@
 
 namespace PushContempt\Rest;
 
+use PushContempt\PrezzoProdotto;
 use PushContempt\SeoSnapshot;
 use WP_REST_Response;
 
@@ -63,24 +64,27 @@ class SeoStatoController {
 			$parola_chiave_focus = get_post_meta( $prodotto->get_id(), '_yoast_wpseo_focuskw', true );
 			$creato              = $prodotto->get_date_created();
 
-			$risultato[] = array(
-				'id'                         => $prodotto->get_id(),
-				'titolo'                     => $prodotto->get_name(),
-				'stato'                      => $prodotto->get_status(),
-				'data_creazione'             => $creato ? $creato->date( 'c' ) : null,
-				'titolo_seo'                 => '' !== $titolo_seo ? $titolo_seo : null,
-				'meta_description'           => '' !== $meta_description ? $meta_description : null,
-				'parola_chiave_focus'        => '' !== $parola_chiave_focus ? $parola_chiave_focus : null,
-				'lunghezza_titolo_seo'       => strlen( (string) $titolo_seo ),
-				'lunghezza_meta_description' => strlen( (string) $meta_description ),
-				'versioni'                   => SeoSnapshot::per_risposta(
-					get_post_meta( $prodotto->get_id(), SeoSnapshot::META_KEY, true ),
-					array(
-						'titolo_seo'          => (string) $titolo_seo,
-						'meta_description'    => (string) $meta_description,
-						'parola_chiave_focus' => (string) $parola_chiave_focus,
-					)
-				),
+			$risultato[] = array_merge(
+				PrezzoProdotto::di( $prodotto ),
+				array(
+					'id'                         => $prodotto->get_id(),
+					'titolo'                     => $prodotto->get_name(),
+					'stato'                      => $prodotto->get_status(),
+					'data_creazione'             => $creato ? $creato->date( 'c' ) : null,
+					'titolo_seo'                 => '' !== $titolo_seo ? $titolo_seo : null,
+					'meta_description'           => '' !== $meta_description ? $meta_description : null,
+					'parola_chiave_focus'        => '' !== $parola_chiave_focus ? $parola_chiave_focus : null,
+					'lunghezza_titolo_seo'       => strlen( (string) $titolo_seo ),
+					'lunghezza_meta_description' => strlen( (string) $meta_description ),
+					'versioni'                   => SeoSnapshot::per_risposta(
+						get_post_meta( $prodotto->get_id(), SeoSnapshot::META_KEY, true ),
+						array(
+							'titolo_seo'          => (string) $titolo_seo,
+							'meta_description'    => (string) $meta_description,
+							'parola_chiave_focus' => (string) $parola_chiave_focus,
+						)
+					),
+				)
 			);
 		}
 

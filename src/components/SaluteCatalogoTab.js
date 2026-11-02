@@ -1,5 +1,6 @@
 import { Button, Notice, Spinner, TextControl } from '@wordpress/components';
 import { useState } from '@wordpress/element';
+import CellaTipoPrezzo from './CellaTipoPrezzo';
 import LinkProdotto from './LinkProdotto';
 import useRestFetch from '../hooks/useRestFetch';
 import { SOGLIA_DESCRIZIONE_DEFAULT } from '../constants';
@@ -50,6 +51,7 @@ export default function SaluteCatalogoTab() {
 					<thead>
 						<tr>
 							<th>Prodotto</th>
+							<th>Tipo e prezzo</th>
 							<th>Problemi</th>
 						</tr>
 					</thead>
@@ -58,6 +60,9 @@ export default function SaluteCatalogoTab() {
 							<tr key={ prodotto.id }>
 								<td>
 									<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
+								</td>
+								<td>
+									<CellaTipoPrezzo prodotto={ prodotto } />
 								</td>
 								<td>{ prodotto.problemi.join( ', ' ) }</td>
 							</tr>

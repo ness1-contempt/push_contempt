@@ -103,6 +103,25 @@ class Api {
 		return prodotto.id;
 	}
 
+	/**
+	 * Un prodotto che nasce gia' con una descrizione (e una breve): sara' lo stato di partenza (base).
+	 *
+	 * @param {string} titolo Nome del prodotto.
+	 * @param {string} descrizione HTML.
+	 * @param {string} breve Descrizione breve.
+	 * @return {Promise<number>} Id del prodotto.
+	 */
+	async creaProdottoConTesto( titolo, descrizione, breve ) {
+		const prodotto = await this.post( '/wc/v3/products', {
+			name: titolo,
+			status: 'publish',
+			regular_price: '10',
+			description: descrizione,
+			short_description: breve,
+		} );
+		return prodotto.id;
+	}
+
 	async scriviSeo( id, campi, origine = '' ) {
 		return this.post( '/push-contempt/v1/seo/prodotto', { id, ...campi, ...( origine ? { origine } : {} ) } );
 	}
@@ -125,6 +144,90 @@ class Api {
 	async seoVivo( id ) {
 		const { titolo_seo: t, meta_description: m, parola_chiave_focus: k } = await this.get( '/push-contempt/v1/seo/prodotto', { id: String( id ) } );
 		return { titolo_seo: t ?? '', meta_description: m ?? '', parola_chiave_focus: k ?? '' };
+	}
+
+	/**
+	 * Scrive la descrizione (e, se data, quella breve) passando dal plugin: tiene base e precedente.
+	 *
+	 * @param {number} id Id del prodotto.
+	 * @param {string} descrizione HTML.
+	 * @param {string} breve Descrizione breve (assente = resta com'e').
+	 */
+	async scriviDescrizione( id, descrizione, breve ) {
+		return this.post( '/push-contempt/v1/descrizione/prodotto', {
+			id,
+			descrizione,
+			...( undefined !== breve ? { descrizione_breve: breve } : {} ),
+			origine: 'test e2e',
+		} );
+	}
+
+	/**
+	 * Le due descrizioni vive di un prodotto.
+	 *
+	 * @param {number} id Id del prodotto.
+	 */
+	async descrizioneViva( id ) {
+		const { descrizione, descrizione_breve: breve } = await this.get( '/push-contempt/v1/descrizione/prodotto', { id: String( id ) } );
+		return { descrizione, breve };
+	}
+
+	/**
+	 * Carica un'immagine nella libreria (un PNG di un pixel) e restituisce il suo id.
+	 *
+	 * @param {string} nomeFile Nome del file.
+	 * @return {Promise<number>} Id dell'allegato.
+	 */
+	async caricaImmagine( nomeFile ) {
+		const png = Buffer.from( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64' );
+		const risposta = await this.request.post( this.url( '/wp/v2/media' ), {
+			headers: { ...this.headers, 'Content-Disposition': `attachment; filename="${ nomeFile }.png"`, 'Content-Type': 'image/png' },
+			data: png,
+		} );
+		expect( risposta.ok(), `upload: ${ await risposta.text() }` ).toBeTruthy();
+		return ( await risposta.json() ).id;
+	}
+
+	/**
+	 * Un prodotto con le immagini date (la prima in evidenza, le altre in galleria) e la parola chiave focus.
+	 *
+	 * @param {string}   titolo Nome del prodotto.
+	 * @param {number[]} immagini Id degli allegati.
+	 * @param {string}   parolaChiave Parola chiave focus.
+	 */
+	async creaProdottoConImmagini( titolo, immagini, parolaChiave ) {
+		const prodotto = await this.post( '/wc/v3/products', {
+			name: titolo,
+			status: 'publish',
+			regular_price: '10',
+			images: immagini.map( ( id ) => ( { id } ) ),
+		} );
+		await this.scriviSeo( prodotto.id, { titolo_seo: '', meta_description: '', parola_chiave_focus: parolaChiave } );
+		return prodotto.id;
+	}
+
+	/**
+	 * Un prodotto variabile con una variante per ogni prezzo.
+	 *
+	 * @param {string}   titolo Nome del prodotto.
+	 * @param {string[]} prezzi Prezzo regolare di ciascuna variante.
+	 * @return {Promise<number>} Id del prodotto.
+	 */
+	async creaVariabile( titolo, prezzi ) {
+		const taglie = prezzi.map( ( _, i ) => `T${ i + 1 }` );
+		const prodotto = await this.post( '/wc/v3/products', {
+			name: titolo,
+			type: 'variable',
+			status: 'publish',
+			attributes: [ { name: 'Taglia', visible: true, variation: true, options: taglie } ],
+		} );
+		for ( const [ i, prezzo ] of prezzi.entries() ) {
+			await this.post( `/wc/v3/products/${ prodotto.id }/variations`, {
+				regular_price: prezzo,
+				attributes: [ { name: 'Taglia', option: taglie[ i ] } ],
+			} );
+		}
+		return prodotto.id;
 	}
 
 	async salvaConcorrente( dati ) {
@@ -172,6 +275,18 @@ async function apriTabSeo( page ) {
 	await page.goto( '/wp-admin/admin.php?page=push-contempt' );
 	await page.getByRole( 'tab', { name: 'SEO' } ).click();
 	await expect( page.getByRole( 'heading', { name: 'Concorrenti e confronto' } ) ).toBeVisible();
+}
+
+/**
+ * Apre la tab Contenuti del plugin sulla sezione indicata.
+ *
+ * @param {import('@playwright/test').Page} page Pagina.
+ * @param {'Descrizioni'|'Immagini (ALT)'|'Link'} sezione Nome del pulsante della sezione.
+ */
+async function apriContenuti( page, sezione ) {
+	await page.goto( '/wp-admin/admin.php?page=push-contempt' );
+	await page.getByRole( 'tab', { name: 'Contenuti' } ).click();
+	await page.getByRole( 'button', { name: sezione } ).click();
 }
 
 /**
@@ -223,14 +338,15 @@ function avviso( page, testo ) {
  *
  * @param {import('@playwright/test').Page} page Pagina.
  * @param {'base'|'precedente'|'attuale'} quale Versione.
+ * @param {string} fonte Dove stanno i valori in uso: "Yoast" (SEO) o "WooCommerce" (descrizioni).
  */
-function scheda( page, quale ) {
+function scheda( page, quale, fonte = 'Yoast' ) {
 	const sottotitolo = {
 		base: 'Il punto di partenza',
 		precedente: 'La versione da cui vieni',
-		attuale: 'In uso adesso in Yoast',
+		attuale: `In uso adesso in ${ fonte }`,
 	}[ quale ];
 	return page.getByText( sottotitolo, { exact: true } ).locator( '..' );
 }
 
-module.exports = { test, expect, nome, valori, riepilogo, apriTabSeo, riga, scheda, avviso, appuntiDisponibili };
+module.exports = { test, expect, nome, valori, riepilogo, apriTabSeo, apriContenuti, riga, scheda, avviso, appuntiDisponibili };

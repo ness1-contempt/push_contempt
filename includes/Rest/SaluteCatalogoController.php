@@ -8,6 +8,7 @@
 namespace PushContempt\Rest;
 
 use PushContempt\CatalogHealth;
+use PushContempt\PrezzoProdotto;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -68,17 +69,20 @@ class SaluteCatalogoController {
 			$dati = array(
 				'ha_immagine'      => (bool) $prodotto->get_image_id(),
 				'numero_categorie' => count( $prodotto->get_category_ids() ),
-				'variabile'        => $prodotto->is_type( 'variable' ),
+				'prezzo_dai_figli' => $prodotto->is_type( array( 'variable', 'grouped' ) ),
 				'prezzo_regolare'  => $prodotto->get_regular_price(),
 				'descrizione'      => $prodotto->get_description(),
 			);
 
 			$problemi = CatalogHealth::problemi( $dati, $soglia_descrizione );
 			if ( ! empty( $problemi ) ) {
-				$risultato[] = array(
-					'id'       => $prodotto->get_id(),
-					'titolo'   => $prodotto->get_name(),
-					'problemi' => $problemi,
+				$risultato[] = array_merge(
+					array(
+						'id'     => $prodotto->get_id(),
+						'titolo' => $prodotto->get_name(),
+					),
+					PrezzoProdotto::di( $prodotto ),
+					array( 'problemi' => $problemi )
 				);
 			}
 		}

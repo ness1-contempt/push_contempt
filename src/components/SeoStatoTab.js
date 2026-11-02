@@ -1,13 +1,15 @@
-import apiFetch from '@wordpress/api-fetch';
 import { Button, Notice, SelectControl, Spinner } from '@wordpress/components';
 import { Fragment, useState } from '@wordpress/element';
+import BarraAzioniVersioni from './BarraAzioniVersioni';
+import CellaTipoPrezzo from './CellaTipoPrezzo';
 import ConcorrentiSezione from './ConcorrentiSezione';
 import GuidaSeo from './GuidaSeo';
 import IspirazioneConcorrente from './IspirazioneConcorrente';
 import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
 import StatoCollegamentoAI from './StatoCollegamentoAI';
-import VersioniSeo from './VersioniSeo';
+import VersioniTesti from './VersioniTesti';
+import useAzioniVersioni from '../hooks/useAzioniVersioni';
 import useRestFetch from '../hooks/useRestFetch';
 
 const TRE_ORE_IN_MS = 3 * 60 * 60 * 1000;
@@ -114,8 +116,6 @@ export default function SeoStatoTab( { onNavigate } ) {
 	const [ prodottoSelezionato, setProdottoSelezionato ] = useState( null );
 	const [ filtro, setFiltro ] = useState( 'tutti' );
 	const [ selezionati, setSelezionati ] = useState( new Set() );
-	const [ inCorso, setInCorso ] = useState( false );
-	const [ esito, setEsito ] = useState( null );
 	const [ aperto, setAperto ] = useState( null );
 
 	const prodottiFiltrati = prodotti ? prodotti.filter( FILTRI[ filtro ] ) : null;
@@ -135,31 +135,10 @@ export default function SeoStatoTab( { onNavigate } ) {
 		} );
 	};
 
-	const esegui = ( azione, ids ) => {
-		const { path, dati, esitoOk, conferma, verbo } = AZIONI[ azione ];
-		const quanti = 1 === ids.length ? 'di questo prodotto' : `di ${ ids.length } prodotti`;
-		if ( ! window.confirm( conferma( quanti ) ) ) {
-			return;
-		}
-		setInCorso( true );
-		setEsito( null );
-		apiFetch( { path: `/push-contempt/v1${ path }`, method: 'POST', data: { ids, ...dati } } )
-			.then( ( esiti ) => {
-				const valori = Object.values( esiti );
-				const fatti = valori.filter( ( e ) => esitoOk === e ).length;
-				const gia = valori.filter( ( e ) => 'gia_in_uso' === e ).length;
-				setEsito( {
-					status: fatti + gia === ids.length ? 'success' : 'warning',
-					testo:
-						`${ verbo }: ${ fatti } su ${ ids.length }.` +
-						( gia ? ` ${ gia } già uguali, lasciati come sono.` : '' ),
-				} );
-				setSelezionati( new Set() );
-				carica();
-			} )
-			.catch( ( err ) => setEsito( { status: 'error', testo: err.message || 'Operazione non riuscita.' } ) )
-			.finally( () => setInCorso( false ) );
-	};
+	const { inCorso, esito, rimuoviEsito, esegui } = useAzioniVersioni( AZIONI, () => {
+		setSelezionati( new Set() );
+		carica();
+	} );
 
 	return (
 		<div style={ { marginTop: '16px' } }>
@@ -210,32 +189,16 @@ export default function SeoStatoTab( { onNavigate } ) {
 				</Notice>
 			) }
 
-			{ selezionati.size > 0 && (
-				<div style={ { margin: '0 0 12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } }>
-					<strong>{ selezionati.size } selezionati</strong>
-					<span style={ { color: '#50575e' } }>
-						({ sceltiConVersioni.length } con versioni salvate: le azioni sulle versioni riguardano solo
-						quelli)
-					</span>
-					{ [ 'base', 'precedente', 'nuova_base' ].map( ( azione ) => (
-						<Button
-							key={ azione }
-							variant="secondary"
-							isBusy={ inCorso }
-							disabled={ inCorso || 0 === sceltiConVersioni.length }
-							onClick={ () => esegui( azione, sceltiConVersioni.map( ( p ) => p.id ) ) }
-						>
-							{ { base: 'Torna alla base', precedente: 'Torna al precedente', nuova_base: 'Usa l\'attuale come base' }[ azione ] }
-						</Button>
-					) ) }
-					<Button variant="link" onClick={ () => setSelezionati( new Set() ) }>
-						Deseleziona
-					</Button>
-				</div>
-			) }
+			<BarraAzioniVersioni
+				selezionati={ selezionati.size }
+				conVersioni={ sceltiConVersioni.length }
+				inCorso={ inCorso }
+				onAzione={ ( azione ) => esegui( azione, sceltiConVersioni.map( ( p ) => p.id ) ) }
+				onDeseleziona={ () => setSelezionati( new Set() ) }
+			/>
 
 			{ esito && (
-				<Notice status={ esito.status } onRemove={ () => setEsito( null ) }>
+				<Notice status={ esito.status } onRemove={ rimuoviEsito }>
 					{ esito.testo }
 				</Notice>
 			) }
@@ -250,6 +213,7 @@ export default function SeoStatoTab( { onNavigate } ) {
 								<span className="screen-reader-text">Seleziona</span>
 							</th>
 							<th>Prodotto</th>
+							<th>Tipo e prezzo</th>
 							<th>Stato</th>
 							<th>Inserito</th>
 							<th>Titolo SEO</th>
@@ -273,6 +237,9 @@ export default function SeoStatoTab( { onNavigate } ) {
 								</td>
 								<td>
 									<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
+								</td>
+								<td>
+									<CellaTipoPrezzo prodotto={ prodotto } />
 								</td>
 								<td>{ 'draft' === prodotto.stato ? 'Bozza' : 'Pubblicato' }</td>
 								<td>
@@ -311,8 +278,8 @@ export default function SeoStatoTab( { onNavigate } ) {
 							</tr>
 							{ prodotto.versioni && aperto === prodotto.id && (
 								<tr>
-									<td colSpan={ 9 }>
-										<VersioniSeo
+									<td colSpan={ 10 }>
+										<VersioniTesti
 											versioni={ prodotto.versioni }
 											occupato={ inCorso }
 											onAzione={ ( azione ) => esegui( azione, [ prodotto.id ] ) }

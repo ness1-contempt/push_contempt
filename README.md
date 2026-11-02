@@ -72,6 +72,22 @@ nativa di WordPress (non scade da sola). Copia i tre valori mostrati
 lì in poi i tab "Carica prodotti" e "SEO" mostrano se il collegamento è
 attivo e preparano il messaggio pronto da incollare in chat.
 
+## Il tab Contenuti: descrizioni, ALT e link
+
+Tre sezioni sui testi dei prodotti, tutte lette dalla REST API del plugin senza AI; quello che richiede di
+scrivere testo si fa con l'assistente AI del cliente (`push_contempt_mcp`), e ogni sezione prepara il messaggio
+da dargli.
+
+- **Descrizioni**: lunghezza di descrizione e descrizione breve, e le versioni **base** (lo stato prima del primo
+  intervento) e **precedente** (quella appena sostituita), con "Torna alla base", "Torna al precedente" e "Usa
+  l'attuale come base", anche su più prodotti insieme. Stesso schema delle versioni SEO.
+- **Immagini (ALT)**: per ogni prodotto quante immagini hanno l'ALT mancante o senza la parola chiave focus
+  (due controlli di Yoast), e modifica a mano del testo ALT.
+- **Link**: quanti link interni e in uscita ha la descrizione di ogni prodotto, e quali non hanno link in uscita.
+
+Nelle tabelle SEO, Contenuti e Salute catalogo la colonna **Tipo e prezzo** mostra il tipo (semplice, variabile,
+raggruppato, esterno) e il prezzo; per variabili e raggruppati è l'intervallo minimo–massimo, mai un numero solo.
+
 ## Il tab SEO: versioni e confronto con i concorrenti
 
 Il tab ha due parti, entrambe con una guida a scomparsa nella pagina stessa.
@@ -149,7 +165,7 @@ le prove, mai i testi delle pagine analizzate.
 | Test PHP (logica pura) | `bin/dev.sh phpunit` |
 | Test PHP di integrazione (controller REST) | vedi sotto |
 | Test JS | `npm run test:unit` |
-| Test end-to-end della tab SEO (Playwright) | vedi `e2e/README.md` |
+| Test end-to-end delle tab SEO e Contenuti (Playwright) | vedi `e2e/README.md` |
 
 `bin/dev.sh` esegue i comandi PHP dentro un container Docker che ha PHP
 installato (pensato per l'ambiente di sviluppo `ols-docker-env`): se il tuo
@@ -183,7 +199,7 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 - `includes/CatalogHealth.php` / `includes/PricingCalculator.php` — logica di calcolo pura, senza dipendenze da WordPress, testata con PHPUnit
 - `includes/Admin/MenuPage.php` — registrazione menu e caricamento della app React
 - `src/components/` — app React (`@wordpress/scripts`), una tab per ciascuna area
-- `tests/` — PHPUnit sulle classi di logica pura; `tests/Integration/` — i controller REST su WordPress e WooCommerce veri; `e2e/` — la tab SEO in un browser (Playwright) su un sito usa-e-getta
+- `tests/` — PHPUnit sulle classi di logica pura; `tests/Integration/` — i controller REST su WordPress e WooCommerce veri; `e2e/` — le tab SEO e Contenuti in un browser (Playwright) su un sito usa-e-getta
 
 ## Endpoint REST (namespace `push-contempt/v1`)
 
@@ -202,7 +218,10 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 | `/seo/ripristina` | POST | `ids` + `versione` (`base` o `precedente`): rimette quella versione dei campi Yoast; la versione lasciata diventa il precedente |
 | `/seo/base` | POST | `ids`: usa i valori attuali come nuova base (non è più l'originale di Yoast) |
 | `/descrizione/prodotto` | GET/POST | lettura/scrittura di descrizione e descrizione breve (HTML filtrato con `wp_kses_post`); tiene base e precedente |
+| `/descrizione/stato` | GET | vista d'insieme delle descrizioni: lunghezze, tipo e prezzo, parola chiave, versioni salvate |
+| `/descrizione/base` | POST | `ids`: usa le descrizioni attuali come nuova base |
 | `/descrizione/ripristina` | POST | `ids` + `versione` (`base` o `precedente`): rimette quella versione delle descrizioni; la versione lasciata diventa il precedente |
+| `/alt/stato` | GET | tutti i prodotti con le loro immagini e quante hanno l'ALT mancante o senza la parola chiave |
 | `/alt/prodotto` | GET/POST | testo ALT dell'immagine in evidenza e della galleria; in scrittura rifiuta gli allegati che non sono del prodotto |
 | `/prodotti` | GET | elenco del catalogo con ricerca per titolo: sku, scorte, tipo e prezzo (variabili e raggruppati con intervallo `prezzo_min`/`prezzo_max`) |
 | `/link/prodotto` | GET | link della descrizione divisi in interni, esterni e altri, con `ha_link_in_uscita` |

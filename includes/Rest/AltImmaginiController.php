@@ -7,6 +7,8 @@
 
 namespace PushContempt\Rest;
 
+use PushContempt\AnalisiAlt;
+use PushContempt\PrezzoProdotto;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -63,6 +65,16 @@ class AltImmaginiController {
 						),
 					),
 				),
+			)
+		);
+
+		register_rest_route(
+			'push-contempt/v1',
+			'/alt/stato',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( self::class, 'handle_stato' ),
+				'permission_callback' => array( self::class, 'permission' ),
 			)
 		);
 	}
@@ -135,27 +147,74 @@ class AltImmaginiController {
 			return $prodotto;
 		}
 
-		$immagini = array();
-		foreach ( self::ruoli_immagini( $prodotto ) as $allegato_id => $ruolo ) {
-			$immagini[] = array(
-				'allegato_id' => $allegato_id,
-				'ruolo'       => $ruolo,
-				'alt'         => self::alt_di( $allegato_id ),
-				'file'        => basename( (string) get_attached_file( $allegato_id ) ),
-				'url'         => (string) wp_get_attachment_url( $allegato_id ),
-			);
-		}
-
 		$parola_chiave = (string) get_post_meta( $prodotto_id, '_yoast_wpseo_focuskw', true );
 		return new WP_REST_Response(
 			array(
 				'id'                  => $prodotto_id,
 				'titolo'              => $prodotto->get_name(),
 				'parola_chiave_focus' => '' !== $parola_chiave ? $parola_chiave : null,
-				'immagini'            => $immagini,
+				'immagini'            => self::immagini( $prodotto, $parola_chiave ),
 			),
 			200
 		);
+	}
+
+	/**
+	 * Le immagini del prodotto con ALT, file, miniatura e il problema dell'ALT (null se va bene).
+	 *
+	 * @param \WC_Product $prodotto      Il prodotto.
+	 * @param string      $parola_chiave Parola chiave focus (vuota se non c'e').
+	 */
+	private static function immagini( \WC_Product $prodotto, string $parola_chiave ): array {
+		$immagini = array();
+		foreach ( self::ruoli_immagini( $prodotto ) as $allegato_id => $ruolo ) {
+			$alt        = self::alt_di( $allegato_id );
+			$immagini[] = array(
+				'allegato_id' => $allegato_id,
+				'ruolo'       => $ruolo,
+				'alt'         => $alt,
+				'problema'    => AnalisiAlt::problema( $alt, $parola_chiave ),
+				'file'        => basename( (string) get_attached_file( $allegato_id ) ),
+				'url'         => (string) wp_get_attachment_url( $allegato_id ),
+				'miniatura'   => (string) wp_get_attachment_image_url( $allegato_id, 'thumbnail' ),
+			);
+		}
+		return $immagini;
+	}
+
+	/**
+	 * Tutti i prodotti pubblicati o in bozza con le loro immagini e quante
+	 * hanno l'ALT mancante o senza la parola chiave.
+	 */
+	public static function handle_stato(): WP_REST_Response {
+		$prodotti = wc_get_products(
+			array(
+				'status'  => array( 'publish', 'draft' ),
+				'limit'   => -1,
+				'orderby' => 'title',
+				'order'   => 'ASC',
+			)
+		);
+
+		$risultato = array();
+		foreach ( $prodotti as $prodotto ) {
+			$parola_chiave = (string) get_post_meta( $prodotto->get_id(), '_yoast_wpseo_focuskw', true );
+			$immagini      = self::immagini( $prodotto, $parola_chiave );
+			$risultato[]   = array_merge(
+				array(
+					'id'                  => $prodotto->get_id(),
+					'titolo'              => $prodotto->get_name(),
+					'stato'               => $prodotto->get_status(),
+					'parola_chiave_focus' => '' !== $parola_chiave ? $parola_chiave : null,
+					'numero_immagini'     => count( $immagini ),
+				),
+				AnalisiAlt::conta( array_column( $immagini, 'problema' ) ),
+				PrezzoProdotto::di( $prodotto ),
+				array( 'immagini' => $immagini )
+			);
+		}
+
+		return new WP_REST_Response( $risultato, 200 );
 	}
 
 	/**
@@ -208,6 +267,9 @@ class AltImmaginiController {
 				'dopo'        => self::alt_di( $allegato_id ),
 			);
 		}
+
+		// L'ALT e' un meta dell'allegato: la pagina del prodotto in cache non se ne accorge da sola.
+		do_action( 'litespeed_purge_post', $prodotto_id );
 
 		return new WP_REST_Response(
 			array(

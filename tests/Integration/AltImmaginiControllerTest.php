@@ -122,4 +122,43 @@ class AltImmaginiControllerTest extends RestTestCase {
 		$this->assertSame( 401, $this->richiesta( 'GET', '/alt/prodotto', array( 'id' => $id ) )->get_status() );
 		$this->assertSame( 'Mio', get_post_meta( $a, AltImmaginiController::META_ALT, true ) );
 	}
+
+	public function test_la_lettura_segnala_il_problema_di_ogni_alt(): void {
+		$senza  = $this->allegato();
+		$fuori  = $this->allegato( 'immagine di una sedia' );
+		$giusto = $this->allegato( 'Sedia rossa in legno' );
+		$id     = $this->prodotto_con_immagini( $senza, array( $fuori, $giusto ) );
+		update_post_meta( $id, '_yoast_wpseo_focuskw', 'sedia rossa' );
+
+		$immagini = $this->richiesta( 'GET', '/alt/prodotto', array( 'id' => $id ) )->get_data()['immagini'];
+
+		$this->assertSame( array( 'mancante', 'senza_parola_chiave', null ), array_column( $immagini, 'problema' ) );
+	}
+
+	public function test_lo_stato_conta_i_problemi_per_prodotto_e_da_miniature_e_tipo(): void {
+		$a  = $this->allegato();
+		$b  = $this->allegato( 'altro' );
+		$c  = $this->allegato( 'Sedia rossa' );
+		$id = $this->prodotto_con_immagini( $a, array( $b, $c ) );
+		update_post_meta( $id, '_yoast_wpseo_focuskw', 'sedia rossa' );
+		$senza_immagini = $this->prodotto();
+
+		$righe = array_column( $this->richiesta( 'GET', '/alt/stato' )->get_data(), null, 'id' );
+
+		$this->assertSame( 3, $righe[ $id ]['numero_immagini'] );
+		$this->assertSame( 1, $righe[ $id ]['mancanti'] );
+		$this->assertSame( 1, $righe[ $id ]['senza_parola_chiave'] );
+		$this->assertSame( 'simple', $righe[ $id ]['tipo'] );
+		$this->assertSame( array( $a, $b, $c ), array_column( $righe[ $id ]['immagini'], 'allegato_id' ) );
+		$this->assertArrayHasKey( 'miniatura', $righe[ $id ]['immagini'][0] );
+		$this->assertSame( 0, $righe[ $senza_immagini ]['numero_immagini'] );
+		$this->assertSame( 0, $righe[ $senza_immagini ]['mancanti'] );
+	}
+
+	public function test_lo_stato_rispetta_i_permessi(): void {
+		$this->accedi_come( 'subscriber' );
+		$this->assertSame( 403, $this->richiesta( 'GET', '/alt/stato' )->get_status() );
+		$this->accedi_come( '' );
+		$this->assertSame( 401, $this->richiesta( 'GET', '/alt/stato' )->get_status() );
+	}
 }

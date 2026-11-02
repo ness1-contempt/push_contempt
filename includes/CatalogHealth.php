@@ -9,8 +9,9 @@ namespace PushContempt;
 
 /**
  * Segnala prodotti pubblicati ma incompleti: nessuna immagine in evidenza,
- * nessuna categoria, prezzo mancante/zero/non valido (solo prodotti
- * semplici), descrizione troppo corta.
+ * nessuna categoria, prezzo mancante/zero/non valido (solo dove il prezzo sta
+ * sul prodotto stesso: non nei variabili e nei raggruppati, che lo prendono dalle
+ * varianti o dai prodotti del gruppo), descrizione troppo corta.
  */
 class CatalogHealth {
 
@@ -18,7 +19,7 @@ class CatalogHealth {
 	 * Problemi trovati per un prodotto, a partire dai suoi dati grezzi.
 	 *
 	 * @param array $dati               Chiavi: ha_immagine (bool), numero_categorie (int),
-	 *                                  variabile (bool), prezzo_regolare (string|null),
+	 *                                  prezzo_dai_figli (bool), prezzo_regolare (string|null),
 	 *                                  descrizione (string|null).
 	 * @param int   $soglia_descrizione Lunghezza minima della descrizione (tag HTML esclusi).
 	 */
@@ -33,7 +34,7 @@ class CatalogHealth {
 			$problemi[] = 'Nessuna categoria';
 		}
 
-		if ( empty( $dati['variabile'] ) && ! self::prezzo_valido( $dati['prezzo_regolare'] ?? null ) ) {
+		if ( empty( $dati['prezzo_dai_figli'] ) && ! self::prezzo_valido( $dati['prezzo_regolare'] ?? null ) ) {
 			$problemi[] = 'Prezzo mancante, zero o non valido';
 		}
 

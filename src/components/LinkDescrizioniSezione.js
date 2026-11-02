@@ -96,7 +96,6 @@ export default function LinkDescrizioniSezione() {
 
 	return (
 		<div style={ { marginTop: '16px' } }>
-			<h3>Link nelle descrizioni</h3>
 			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
 				Controlla la descrizione di ogni prodotto e dice quanti link ha verso altre pagine del tuo sito
 				(interni) e verso altri siti (in uscita). Yoast segnala come problema la mancanza di link in uscita:

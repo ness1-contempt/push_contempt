@@ -158,4 +158,54 @@ class DescrizioneProdottoControllerTest extends RestTestCase {
 		$this->assertSame( 'Breve', $dati['descrizione_breve'] );
 		$this->assertSame( '<p>A</p>', $dati['versioni']['base']['descrizione'] );
 	}
+
+	public function test_lo_stato_riassume_lunghezze_tipo_prezzo_e_versioni(): void {
+		$id = $this->prodotto_con( '<h2>Titolo</h2><p>Testo di venti caratteri</p>', '<b>Breve</b>' );
+		update_post_meta( $id, '_yoast_wpseo_focuskw', 'sedia' );
+		$modificato = $this->prodotto_con( '<p>A</p>' );
+		$this->scrivi( $modificato, array( 'descrizione' => '<p>BB</p>' ) );
+
+		$righe = array_column( $this->richiesta( 'GET', '/descrizione/stato' )->get_data(), null, 'id' );
+
+		$this->assertSame( 'sedia', $righe[ $id ]['parola_chiave_focus'] );
+		$this->assertSame( mb_strlen( 'TitoloTesto di venti caratteri' ), $righe[ $id ]['lunghezza_descrizione'] );
+		$this->assertSame( 5, $righe[ $id ]['lunghezza_descrizione_breve'] );
+		$this->assertSame( 'simple', $righe[ $id ]['tipo'] );
+		$this->assertSame( '10', $righe[ $id ]['prezzo_min'] );
+		$this->assertNull( $righe[ $id ]['versioni'] );
+		$this->assertSame( '<p>A</p>', $righe[ $modificato ]['versioni']['base']['descrizione'] );
+	}
+
+	public function test_nuova_base_usa_le_descrizioni_attuali_e_salta_i_mai_modificati(): void {
+		$id          = $this->prodotto_con( '<p>Originale</p>' );
+		$mai_toccato = $this->prodotto_con( '<p>X</p>' );
+		$this->scrivi( $id, array( 'descrizione' => '<p>Nuova</p>' ) );
+
+		$esiti = $this->richiesta( 'POST', '/descrizione/base', array( 'ids' => array( $id, $mai_toccato, 999999 ) ), true )->get_data();
+
+		$this->assertSame(
+			array(
+				$id          => 'impostata',
+				$mai_toccato => 'nessuno_snapshot',
+				999999       => 'non_trovato',
+			),
+			$esiti
+		);
+		$snapshot = get_post_meta( $id, DescrizioneSnapshot::META_KEY, true );
+		$this->assertSame( '<p>Nuova</p>', $snapshot['base']['descrizione'] );
+		$this->assertSame( 'utente', $snapshot['base']['tipo'] );
+		$this->assertSame( 403, $this->nega_a_chi_non_gestisce( 'POST', '/descrizione/base', array( 'ids' => array( $id ) ) ) );
+	}
+
+	/**
+	 * Lo stato HTTP di una richiesta fatta da un utente senza permessi.
+	 *
+	 * @param string $metodo Metodo HTTP.
+	 * @param string $rotta  Rotta senza prefisso.
+	 * @param array  $params Parametri.
+	 */
+	private function nega_a_chi_non_gestisce( string $metodo, string $rotta, array $params ): int {
+		$this->accedi_come( 'subscriber' );
+		return $this->richiesta( $metodo, $rotta, $params, true )->get_status();
+	}
 }

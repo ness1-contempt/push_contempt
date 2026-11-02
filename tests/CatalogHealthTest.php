@@ -24,7 +24,7 @@ class CatalogHealthTest extends TestCase {
 		$base = array(
 			'ha_immagine'      => true,
 			'numero_categorie' => 1,
-			'variabile'        => false,
+			'prezzo_dai_figli' => false,
 			'prezzo_regolare'  => '19.90',
 			'descrizione'      => '<p>' . str_repeat( 'Testo descrittivo abbastanza lungo. ', 3 ) . '</p>',
 		);
@@ -69,7 +69,7 @@ class CatalogHealthTest extends TestCase {
 	/**
 	 * Il prezzo mancante va segnalato solo per prodotti non variabili.
 	 */
-	public function test_segnala_prezzo_mancante_solo_se_non_variabile(): void {
+	public function test_segnala_prezzo_mancante_solo_se_il_prezzo_sta_sul_prodotto(): void {
 		$semplice = CatalogHealth::problemi( $this->prodotto( array( 'prezzo_regolare' => null ) ), 50 );
 		$this->assertTrue( $this->contiene_sottostringa( $semplice, 'Prezzo' ) );
 
@@ -77,7 +77,7 @@ class CatalogHealthTest extends TestCase {
 			$this->prodotto(
 				array(
 					'prezzo_regolare' => null,
-					'variabile'       => true,
+					'prezzo_dai_figli' => true,
 				)
 			),
 			50
