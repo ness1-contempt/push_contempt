@@ -201,6 +201,9 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 | `/concorrenti` | GET/POST/DELETE | analisi SEO dei siti concorrenti inviate dal server MCP (punteggi per area), mostrate nella tab SEO |
 | `/seo/ripristina` | POST | `ids` + `versione` (`base` o `precedente`): rimette quella versione dei campi Yoast; la versione lasciata diventa il precedente |
 | `/seo/base` | POST | `ids`: usa i valori attuali come nuova base (non è più l'originale di Yoast) |
+| `/descrizione/prodotto` | GET/POST | lettura/scrittura di descrizione e descrizione breve (HTML filtrato con `wp_kses_post`); tiene base e precedente |
+| `/descrizione/ripristina` | POST | `ids` + `versione` (`base` o `precedente`): rimette quella versione delle descrizioni; la versione lasciata diventa il precedente |
+| `/alt/prodotto` | GET/POST | testo ALT dell'immagine in evidenza e della galleria; in scrittura rifiuta gli allegati che non sono del prodotto |
 | `/prodotti` | POST | crea un prodotto in bozza (titolo, descrizione, prezzo, categoria, immagini, SEO) |
 | `/prodotti/bozze` | GET | prodotti creati e non ancora pubblicati |
 | `/credenziali` | GET/POST | stato/generazione della Application Password per `push_contempt_mcp` |

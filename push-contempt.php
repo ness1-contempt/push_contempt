@@ -39,6 +39,8 @@ add_action(
 		\PushContempt\Rest\SeoStatoController::register();
 		\PushContempt\Rest\CredenzialiController::register();
 		\PushContempt\Rest\SeoProdottoController::register();
+		\PushContempt\Rest\DescrizioneProdottoController::register();
+		\PushContempt\Rest\AltImmaginiController::register();
 		\PushContempt\Rest\ConcorrentiController::register();
 		\PushContempt\Rest\ProdottiController::register();
 		\PushContempt\Rest\OrdiniController::register();

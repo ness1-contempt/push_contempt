@@ -24,6 +24,9 @@ namespace PushContempt;
  * Il meta conserva anche `ultima_scrittura` (cosa ha scritto il plugin e chi):
  * serve a riconoscere una modifica fatta a mano, quando i valori vivi non
  * coincidono piu'.
+ *
+ * Campi, chiave del meta e versioni si leggono con `static::`: una sottoclasse
+ * (vedi DescrizioneSnapshot) riusa la stessa logica su altri campi.
  */
 class SeoSnapshot {
 
@@ -55,7 +58,7 @@ class SeoSnapshot {
 	 */
 	private static function versione( array $valori, string $origine, string $quando ): array {
 		$versione = array();
-		foreach ( self::CAMPI as $campo ) {
+		foreach ( static::CAMPI as $campo ) {
 			$versione[ $campo ] = (string) ( $valori[ $campo ] ?? '' );
 		}
 		$versione['origine']    = $origine;
@@ -70,7 +73,7 @@ class SeoSnapshot {
 	 * @param array $b Secondo insieme.
 	 */
 	public static function valori_uguali( array $a, array $b ): bool {
-		foreach ( self::CAMPI as $campo ) {
+		foreach ( static::CAMPI as $campo ) {
 			if ( (string) ( $a[ $campo ] ?? '' ) !== (string) ( $b[ $campo ] ?? '' ) ) {
 				return false;
 			}
@@ -150,7 +153,7 @@ class SeoSnapshot {
 	 */
 	public static function ripristina( array $snapshot, string $versione, array $attuali, string $quando ): ?array {
 		$scelta = $snapshot[ $versione ] ?? null;
-		if ( ! in_array( $versione, self::VERSIONI, true ) || ! is_array( $scelta ) || self::valori_uguali( $scelta, $attuali ) ) {
+		if ( ! in_array( $versione, static::VERSIONI, true ) || ! is_array( $scelta ) || self::valori_uguali( $scelta, $attuali ) ) {
 			return null;
 		}
 		$valori = self::versione( $scelta, '', '' );
