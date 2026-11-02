@@ -16,4 +16,14 @@ describe( 'messaggioCarica', () => {
 		expect( testo ).toContain( 'senza inventare' );
 		expect( testo ).toContain( 'Prezzo unico' );
 	} );
+
+	it( 'spiega che le cartelle sono l\'albero delle categorie e cosa fare in caso di conflitto', () => {
+		const testo = messaggioCarica( '/x' );
+
+		expect( testo ).toContain( 'Indumenti/Magliette/<Prodotto>/' );
+		expect( testo ).toContain( 'percorso_categoria' );
+		expect( testo ).toContain( 'esistere una volta sola' );
+		expect( testo ).toContain( 'non caricare quei prodotti' );
+		expect( testo ).toContain( 'senza risolverlo da solo' );
+	} );
 } );

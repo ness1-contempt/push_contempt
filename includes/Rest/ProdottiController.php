@@ -8,6 +8,7 @@
 namespace PushContempt\Rest;
 
 use PushContempt\CatalogHealth;
+use PushContempt\PercorsoCategorie;
 use PushContempt\PrezzoProdotto;
 use PushContempt\VariantiProdotto;
 use WC_Product_Attribute;
@@ -76,8 +77,10 @@ class ProdottiController {
 							'required' => true,
 						),
 						'categoria'            => array(
-							'type'     => 'string',
-							'required' => true,
+							'type' => 'string',
+						),
+						'percorso_categoria'   => array(
+							'type' => 'array',
 						),
 						'immagine_evidenza_id' => array(
 							'type' => 'integer',
@@ -109,6 +112,22 @@ class ProdottiController {
 							'type'    => 'boolean',
 							'default' => false,
 						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			'push-contempt/v1',
+			'/categorie/verifica',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( self::class, 'handle_verifica_categorie' ),
+				'permission_callback' => array( self::class, 'permission' ),
+				'args'                => array(
+					'percorsi' => array(
+						'type'     => 'array',
+						'required' => true,
 					),
 				),
 			)
@@ -249,12 +268,29 @@ class ProdottiController {
 			}
 		}
 
-		if ( $request->get_param( 'solo_anteprima' ) ) {
-			return new WP_REST_Response( self::anteprima( $request, $varianti ), 200 );
+		$piano  = null;
+		$albero = is_array( $request->get_param( 'percorso_categoria' ) ) && array() !== $request->get_param( 'percorso_categoria' );
+		if ( $albero ) {
+			$piano = self::piano_categorie( $request->get_param( 'percorso_categoria' ) );
+			if ( is_wp_error( $piano ) ) {
+				return $piano;
+			}
+		} elseif ( '' === trim( (string) $request->get_param( 'categoria' ) ) ) {
+			return new WP_Error( 'push_contempt_categoria_mancante', 'Serve la categoria (o il percorso delle categorie).', array( 'status' => 400 ) );
 		}
 
-		$categoria_id = self::trova_o_crea_categoria( $request->get_param( 'categoria' ) );
+		if ( $request->get_param( 'solo_anteprima' ) ) {
+			return new WP_REST_Response( self::anteprima( $request, $varianti, $piano ), 200 );
+		}
+
+		$categorie_create = array();
+		if ( null !== $piano ) {
+			$categoria_id = self::crea_categorie_mancanti( $piano['livelli'], $categorie_create );
+		} else {
+			$categoria_id = self::trova_o_crea_categoria( $request->get_param( 'categoria' ) );
+		}
 		if ( is_wp_error( $categoria_id ) ) {
+			self::togli_categorie( $categorie_create );
 			return $categoria_id;
 		}
 
@@ -287,6 +323,7 @@ class ProdottiController {
 				self::crea_varianti( $prodotto_id, $varianti['combinazioni'], $prezzo );
 			} catch ( \Throwable $errore ) {
 				$prodotto->delete( true ); // Toglie anche le varianti gia' create.
+				self::togli_categorie( $categorie_create );
 				return new WP_Error(
 					'push_contempt_creazione_varianti_fallita',
 					'Creazione delle varianti non riuscita, non e\' stato creato niente: ' . $errore->getMessage(),
@@ -314,9 +351,16 @@ class ProdottiController {
 		return new WP_REST_Response(
 			array_merge(
 				array(
-					'stato'        => 'creato_in_bozza',
-					'prodotto_id'  => $prodotto_id,
-					'url_modifica' => admin_url( "post.php?post={$prodotto_id}&action=edit" ),
+					'stato'            => 'creato_in_bozza',
+					'prodotto_id'      => $prodotto_id,
+					'url_modifica'     => admin_url( "post.php?post={$prodotto_id}&action=edit" ),
+					'categorie_create' => array_column(
+						array_filter(
+							null !== $piano ? $piano['livelli'] : array(),
+							static fn( $livello ) => 'da_creare' === $livello['stato']
+						),
+						'percorso'
+					),
 				),
 				PrezzoProdotto::di( wc_get_product( $prodotto_id ) )
 			),
@@ -325,12 +369,151 @@ class ProdottiController {
 	}
 
 	/**
+	 * Le categorie prodotto esistenti come `{ id, nome, madre }`.
+	 *
+	 * @return array[]
+	 */
+	private static function categorie_esistenti(): array {
+		$termini = get_terms(
+			array(
+				'taxonomy'   => 'product_cat',
+				'hide_empty' => false,
+				'number'     => 0,
+			)
+		);
+		$elenco  = array();
+		if ( is_wp_error( $termini ) ) {
+			return $elenco;
+		}
+		foreach ( $termini as $termine ) {
+			$elenco[] = array(
+				'id'    => (int) $termine->term_id,
+				'nome'  => wp_specialchars_decode( $termine->name, ENT_QUOTES ),
+				'madre' => (int) $termine->parent,
+			);
+		}
+		return $elenco;
+	}
+
+	/**
+	 * Il confronto fra un percorso di categorie e l'albero del sito, o un errore se la forma
+	 * non va (400) o se c'e' un conflitto di nomi (409).
+	 *
+	 * @param mixed $percorso Elenco di nomi, dalla radice alla categoria del prodotto.
+	 *
+	 * @return array|WP_Error `{ livelli, errori }` senza errori, altrimenti l'errore.
+	 */
+	private static function piano_categorie( $percorso ) {
+		$pulito = PercorsoCategorie::pulisci( $percorso );
+		if ( array() !== $pulito['errori'] ) {
+			return new WP_Error(
+				'push_contempt_percorso_categoria_non_valido',
+				implode( ' ', $pulito['errori'] ),
+				array(
+					'status' => 400,
+					'errori' => $pulito['errori'],
+				)
+			);
+		}
+		$piano = PercorsoCategorie::risolvi( $pulito['percorso'], self::categorie_esistenti() );
+		if ( array() !== $piano['errori'] ) {
+			return new WP_Error(
+				'push_contempt_categoria_in_conflitto',
+				implode( ' ', $piano['errori'] ),
+				array(
+					'status'  => 409,
+					'errori'  => $piano['errori'],
+					'livelli' => $piano['livelli'],
+				)
+			);
+		}
+		return $piano;
+	}
+
+	/**
+	 * Crea le categorie del percorso che mancano, dall'alto verso il basso, ciascuna sotto la sua madre.
+	 *
+	 * @param array $livelli  Livelli del piano (esiste / da_creare).
+	 * @param array $create   Id delle categorie create, aggiornato per riferimento (serve ad annullarle).
+	 *
+	 * @return int|WP_Error Id della categoria piu' in basso, o l'errore.
+	 */
+	private static function crea_categorie_mancanti( array $livelli, array &$create ) {
+		$madre = 0;
+		foreach ( $livelli as $livello ) {
+			if ( 'esiste' === $livello['stato'] ) {
+				$madre = (int) $livello['id'];
+				continue;
+			}
+			$risultato = wp_insert_term( $livello['nome'], 'product_cat', array( 'parent' => $madre ) );
+			if ( is_wp_error( $risultato ) ) {
+				return $risultato;
+			}
+			$madre    = (int) $risultato['term_id'];
+			$create[] = $madre;
+		}
+		return $madre;
+	}
+
+	/**
+	 * Toglie le categorie create in questa richiesta (dalla piu' in basso), se poi la creazione fallisce.
+	 *
+	 * @param int[] $create Id delle categorie create.
+	 */
+	private static function togli_categorie( array $create ): void {
+		foreach ( array_reverse( $create ) as $id ) {
+			wp_delete_term( (int) $id, 'product_cat' );
+		}
+	}
+
+	/**
+	 * Per ogni percorso di categorie cosa si farebbe, piu' i nomi che compaiono in
+	 * punti diversi delle cartelle. Sola lettura: non crea niente.
+	 *
+	 * @param WP_REST_Request $request Richiesta REST in arrivo.
+	 */
+	public static function handle_verifica_categorie( WP_REST_Request $request ): WP_REST_Response {
+		$percorsi  = (array) $request->get_param( 'percorsi' );
+		$esistenti = self::categorie_esistenti();
+		$risultati = array();
+		$validi    = array();
+		foreach ( $percorsi as $percorso ) {
+			$pulito = PercorsoCategorie::pulisci( $percorso );
+			if ( array() !== $pulito['errori'] ) {
+				$risultati[] = array(
+					'percorso' => (array) $percorso,
+					'livelli'  => array(),
+					'errori'   => $pulito['errori'],
+				);
+				continue;
+			}
+			$validi[]    = $pulito['percorso'];
+			$piano       = PercorsoCategorie::risolvi( $pulito['percorso'], $esistenti );
+			$risultati[] = array(
+				'percorso' => $pulito['percorso'],
+				'livelli'  => $piano['livelli'],
+				'errori'   => $piano['errori'],
+			);
+		}
+
+		return new WP_REST_Response(
+			array(
+				'percorsi'               => $risultati,
+				'conflitti_tra_percorsi' => PercorsoCategorie::conflitti_tra_percorsi( $validi ),
+				'conflitti'              => PercorsoCategorie::conflitti_dettaglio( $validi ),
+			),
+			200
+		);
+	}
+
+	/**
 	 * Cosa verrebbe creato, senza scrivere niente.
 	 *
 	 * @param WP_REST_Request $request  Richiesta REST in arrivo.
 	 * @param array|null      $varianti Esito di VariantiProdotto::analizza (null per un semplice).
+	 * @param array|null      $piano    Confronto del percorso di categorie con l'albero (null se si usa la categoria singola).
 	 */
-	private static function anteprima( WP_REST_Request $request, ?array $varianti ): array {
+	private static function anteprima( WP_REST_Request $request, ?array $varianti, ?array $piano ): array {
 		$prezzo    = (string) $request->get_param( 'prezzo_regolare' );
 		$categoria = (string) $request->get_param( 'categoria' );
 		$esito     = array(
@@ -338,10 +521,15 @@ class ProdottiController {
 			'tipo'            => (string) $request->get_param( 'tipo' ),
 			'titolo'          => (string) $request->get_param( 'titolo' ),
 			'categoria'       => $categoria,
-			'categoria_nuova' => ! get_term_by( 'name', $categoria, 'product_cat' ),
+			'categoria_nuova' => null !== $piano
+				? in_array( 'da_creare', array_column( $piano['livelli'], 'stato' ), true )
+				: ! get_term_by( 'name', $categoria, 'product_cat' ),
 			'prezzo_regolare' => $prezzo,
 			'in_bozza'        => true,
 		);
+		if ( null !== $piano ) {
+			$esito['categorie'] = $piano['livelli'];
+		}
 		if ( null === $varianti ) {
 			return $esito;
 		}

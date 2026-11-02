@@ -1,6 +1,6 @@
 /**
  * Messaggio pronto per l'assistente AI del cliente: caricare i prodotti nuovi
- * di una cartella. Spiega anche i prodotti variabili, perche' e' il punto in
+ * di una cartella. Spiega le cartelle come albero di categorie e i prodotti variabili, perche' e' il punto in
  * cui un assistente che fa tutto da solo puo' sbagliare: le varianti vanno
  * prima mostrate in anteprima, e se non sono scritte nel formato previsto
  * serve il via libera dell'utente.
@@ -18,6 +18,11 @@ export function messaggioCarica( cartella ) {
 		'Se nel file di testo c\'è una riga "varianti: Colore: Nero, Bianco | Memoria: 256 GB, 512 GB" usala così com\'è. ' +
 		'Se le varianti sono solo descritte nel testo, ricavale da quello che c\'è scritto davvero, senza inventare ' +
 		'valori, e prima di creare mostrami l\'anteprima delle varianti e aspetta il mio ok. ' +
-		'Prezzo unico per tutte le varianti, nessuna scorta.'
+		'Prezzo unico per tutte le varianti, nessuna scorta.\n\n' +
+		'Le cartelle rispecchiano le categorie di WooCommerce (es. Indumenti/Magliette/<Prodotto>/): ' +
+		'usa il percorso_categoria che trova la scansione, così le categorie mancanti si creano una ' +
+		'dentro l\'altra. Un nome di categoria deve esistere una volta sola: se la scansione segnala ' +
+		'problemi con le categorie, o cartelle da controllare, non caricare quei prodotti e riportami ' +
+		'il problema così com\'è, senza risolverlo da solo.'
 	);
 }

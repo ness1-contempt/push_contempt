@@ -103,6 +103,33 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 			<MessaggioProntoAI testo={ messaggioCarica( cartella.trim() ) } />
 
 			<details style={ { maxWidth: '640px', margin: '16px 0' } }>
+				<summary style={ { cursor: 'pointer', fontWeight: 600 } }>Come organizzare le cartelle (categorie)</summary>
+				<p>
+					Le cartelle sono lo <strong>specchio delle categorie</strong> di WooCommerce, a qualsiasi profondità
+					(fino a 5 livelli). Una cartella con le foto e un file di testo è un prodotto; le cartelle sopra di lei
+					sono le sue categorie, una dentro l'altra:
+				</p>
+				<pre style={ { background: '#f0f0f1', padding: '8px', whiteSpace: 'pre-wrap' } }>
+					Prodotti/{ '\n' }
+					└ Indumenti/{ '\n' }
+					{ '  ' }└ Magliette/{ '\n' }
+					{ '    ' }└ Maglietta rossa/   ← foto + file di testo
+				</pre>
+				<p>
+					Le categorie che mancano vengono create nel posto giusto (qui Magliette dentro Indumenti), quelle che
+					esistono già si riusano, e il prodotto va nella categoria più in basso.
+				</p>
+				<p>
+					<strong>Un nome di categoria può esistere una volta sola</strong> in tutto l'albero. Se la stessa
+					categoria compare in due punti (fra le cartelle, o fra le cartelle e il sito, per esempio Magliette sia
+					dentro Indumenti sia dentro Sport) il caricamento di quei prodotti{ ' ' }
+					<strong>viene fermato e il problema ti viene segnalato</strong>, senza creare niente: sistema le cartelle
+					o le categorie e riprova. Vengono segnalate anche le cartelle dubbie (con foto e sottocartelle insieme, o
+					un prodotto fuori da una cartella di categoria).
+				</p>
+			</details>
+
+			<details style={ { maxWidth: '640px', margin: '16px 0' } }>
 				<summary style={ { cursor: 'pointer', fontWeight: 600 } }>Prodotti con varianti (colori, memoria, taglie)</summary>
 				<p>
 					Un prodotto <strong>variabile</strong> ha più varianti dello stesso articolo. Si creano sempre in
