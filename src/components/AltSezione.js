@@ -7,6 +7,12 @@ import MessaggioProntoAI from './MessaggioProntoAI';
 import useRestFetch from '../hooks/useRestFetch';
 import { messaggioAlt } from '../lib/messaggiContenuti';
 
+const ETICHETTE_RUOLO = {
+	principale: 'immagine in evidenza',
+	galleria: 'galleria',
+	variante: 'immagine di una variante',
+};
+
 const OPZIONI_FILTRO = [
 	{ label: 'Solo con problemi (ALT mancante o senza parola chiave)', value: 'problemi' },
 	{ label: 'Tutti i prodotti con immagini', value: 'tutti' },
@@ -63,7 +69,7 @@ function ModificaAlt( { prodotto, occupato, onSalva } ) {
 					) }
 					<div style={ { flex: '1 1 auto', maxWidth: '640px' } }>
 						<TextControl
-							label={ `ALT — ${ 'principale' === immagine.ruolo ? 'immagine in evidenza' : 'galleria' }` }
+							label={ `ALT — ${ ETICHETTE_RUOLO[ immagine.ruolo ] ?? 'galleria' }` }
 							help={ immagine.file }
 							value={ modifiche[ immagine.allegato_id ] ?? immagine.alt }
 							onChange={ ( testo ) => setModifiche( ( precedenti ) => ( { ...precedenti, [ immagine.allegato_id ]: testo } ) ) }
@@ -132,7 +138,7 @@ export default function AltSezione() {
 	return (
 		<div style={ { marginTop: '16px' } }>
 			<p style={ { maxWidth: '780px', marginBottom: '16px', color: '#50575e' } }>
-				Per ogni prodotto conta le immagini (in evidenza e galleria) con il testo ALT mancante o che non contiene
+				Per ogni prodotto conta le immagini (in evidenza, galleria e, nei prodotti variabili, delle varianti) con il testo ALT mancante o che non contiene
 				la parola chiave focus: sono due controlli di Yoast. "Modifica ALT" mostra le immagini e ti lascia
 				correggere il testo a mano; "Prepara messaggio" ti dà il testo da dare al tuo assistente AI per scriverli
 				al posto tuo.

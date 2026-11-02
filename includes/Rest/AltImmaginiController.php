@@ -106,8 +106,8 @@ class AltImmaginiController {
 	}
 
 	/**
-	 * Le immagini del prodotto: id allegato => ruolo ("principale" o "galleria"),
-	 * nell'ordine in cui compaiono nella scheda, senza doppioni.
+	 * Le immagini del prodotto: id allegato => ruolo ("principale", "galleria" o
+	 * "variante"), nell'ordine in cui compaiono nella scheda, senza doppioni.
 	 *
 	 * @param \WC_Product $prodotto Il prodotto.
 	 */
@@ -119,6 +119,16 @@ class AltImmaginiController {
 		foreach ( $prodotto->get_gallery_image_ids() as $allegato_id ) {
 			if ( ! isset( $ruoli[ (int) $allegato_id ] ) ) {
 				$ruoli[ (int) $allegato_id ] = 'galleria';
+			}
+		}
+		// Un variabile puo' avere un'immagine per variante (il colore, il modello).
+		if ( $prodotto instanceof \WC_Product_Variable ) {
+			foreach ( $prodotto->get_children() as $variante_id ) {
+				$variante    = wc_get_product( $variante_id );
+				$allegato_id = $variante ? (int) $variante->get_image_id( 'edit' ) : 0;
+				if ( $allegato_id && ! isset( $ruoli[ $allegato_id ] ) ) {
+					$ruoli[ $allegato_id ] = 'variante';
+				}
 			}
 		}
 		return $ruoli;
