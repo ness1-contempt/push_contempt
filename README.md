@@ -215,6 +215,8 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 | `/seo/stato` | GET | vista d'insieme SEO su tutto il catalogo |
 | `/seo/prodotto` | GET/POST | lettura/scrittura campi Yoast di un prodotto (tiene base e precedente); in lettura anche tipo e prezzo (per i variabili l'intervallo `prezzo_min`/`prezzo_max`) |
 | `/concorrenti` | GET/POST/DELETE | analisi SEO dei siti concorrenti inviate dal server MCP (punteggi per area), mostrate nella tab SEO |
+| `/seo/varianti` | GET/POST | SEO delle varianti di un variabile: attributi, varianti (prezzo, SKU, immagine, descrizione) e problemi; in scrittura descrizione/SKU (`solo_anteprima` non salva; rifiuta varianti non del prodotto e SKU in uso) |
+| `/seo/schema-varianti` | GET/POST | interruttore dei dati strutturati `ProductGroup` dei variabili (`attivo`) |
 | `/seo/ripristina` | POST | `ids` + `versione` (`base` o `precedente`): rimette quella versione dei campi Yoast; la versione lasciata diventa il precedente |
 | `/seo/base` | POST | `ids`: usa i valori attuali come nuova base (non è più l'originale di Yoast) |
 | `/descrizione/prodotto` | GET/POST | lettura/scrittura di descrizione e descrizione breve (HTML filtrato con `wp_kses_post`); tiene base e precedente |
@@ -222,7 +224,7 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 | `/descrizione/base` | POST | `ids`: usa le descrizioni attuali come nuova base |
 | `/descrizione/ripristina` | POST | `ids` + `versione` (`base` o `precedente`): rimette quella versione delle descrizioni; la versione lasciata diventa il precedente |
 | `/alt/stato` | GET | tutti i prodotti con le loro immagini e quante hanno l'ALT mancante o senza la parola chiave |
-| `/alt/prodotto` | GET/POST | testo ALT dell'immagine in evidenza e della galleria; in scrittura rifiuta gli allegati che non sono del prodotto |
+| `/alt/prodotto` | GET/POST | testo ALT dell'immagine in evidenza, della galleria e (nei variabili) delle varianti; in scrittura rifiuta gli allegati che non sono del prodotto |
 | `/prodotti` | GET | elenco del catalogo con ricerca per titolo: sku, scorte, tipo e prezzo (variabili e raggruppati con intervallo `prezzo_min`/`prezzo_max`) |
 | `/link/prodotto` | GET | link della descrizione divisi in interni, esterni e altri, con `ha_link_in_uscita` |
 | `/link/prodotti` | GET | riepilogo dei link di tutti i prodotti (`stato`, `solo_senza_link_in_uscita`): totali per prodotto e quanti senza link in uscita |
