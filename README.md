@@ -226,8 +226,8 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 | `/prodotti` | GET | elenco del catalogo con ricerca per titolo: sku, scorte, tipo e prezzo (variabili e raggruppati con intervallo `prezzo_min`/`prezzo_max`) |
 | `/link/prodotto` | GET | link della descrizione divisi in interni, esterni e altri, con `ha_link_in_uscita` |
 | `/link/prodotti` | GET | riepilogo dei link di tutti i prodotti (`stato`, `solo_senza_link_in_uscita`): totali per prodotto e quanti senza link in uscita |
-| `/prodotti` | POST | crea un prodotto in bozza (titolo, descrizione, prezzo, categoria, immagini, SEO) |
-| `/prodotti/bozze` | GET | prodotti creati e non ancora pubblicati |
+| `/prodotti` | POST | crea un prodotto in bozza (titolo, descrizione, prezzo, categoria, immagini, SEO); con `tipo=variable` e `attributi` crea un variabile (una variante per combinazione, prezzo unico, senza scorte); `solo_anteprima` non scrive niente |
+| `/prodotti/bozze` | GET | prodotti creati e non ancora pubblicati (con tipo e numero di varianti) |
 | `/credenziali` | GET/POST | stato/generazione della Application Password per `push_contempt_mcp` |
 
 Tutte richiedono autenticazione (sessione wp-admin per le chiamate del

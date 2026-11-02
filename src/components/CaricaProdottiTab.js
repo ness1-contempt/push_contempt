@@ -4,20 +4,7 @@ import LinkProdotto from './LinkProdotto';
 import MessaggioProntoAI from './MessaggioProntoAI';
 import StatoCollegamentoAI from './StatoCollegamentoAI';
 import useRestFetch from '../hooks/useRestFetch';
-
-/**
- * Messaggio pronto da incollare nella chat dell'assistente AI del cliente.
- *
- * @param {string} cartella Percorso della cartella prodotti (puo' essere vuoto).
- */
-function messaggioPronto( cartella ) {
-	const posto = cartella || '[INCOLLA QUI IL PERCORSO DELLA CARTELLA]';
-	return (
-		`Carica su WooCommerce i prodotti nuovi che trovi in ${ posto }: per ciascuno leggi immagini e testo ` +
-		'disponibili, crea il prodotto con titolo, descrizione e categoria adatti, e scrivi anche titolo SEO e ' +
-		'meta description con Yoast.'
-	);
-}
+import { messaggioCarica } from '../lib/messaggioCarica';
 
 /**
  * Prodotti creati da crea_prodotto e non ancora pubblicati: promemoria
@@ -62,6 +49,7 @@ function ProdottiInBozza() {
 					{ prodotti.map( ( prodotto ) => (
 						<li key={ prodotto.id }>
 							<LinkProdotto id={ prodotto.id }>{ prodotto.titolo }</LinkProdotto>
+							{ 'variable' === prodotto.tipo && ` — variabile, ${ prodotto.numero_varianti } varianti` }
 						</li>
 					) ) }
 				</ul>
@@ -112,7 +100,33 @@ export default function CaricaProdottiTab( { onNavigate } ) {
 				/>
 			</div>
 
-			<MessaggioProntoAI testo={ messaggioPronto( cartella.trim() ) } />
+			<MessaggioProntoAI testo={ messaggioCarica( cartella.trim() ) } />
+
+			<details style={ { maxWidth: '640px', margin: '16px 0' } }>
+				<summary style={ { cursor: 'pointer', fontWeight: 600 } }>Prodotti con varianti (colori, memoria, taglie)</summary>
+				<p>
+					Un prodotto <strong>variabile</strong> ha più varianti dello stesso articolo. Si creano sempre in
+					bozza, con <strong>un prezzo unico</strong> per tutte le varianti e <strong>senza scorte</strong>{ ' ' }
+					(prezzi e scorte per singola variante si cambiano poi da wp-admin).
+				</p>
+				<p>
+					<strong>Modo preciso.</strong> Nel file di testo del prodotto scrivi una riga sola con gli attributi
+					separati da <code>|</code> e i valori separati da virgola:
+				</p>
+				<pre style={ { background: '#f0f0f1', padding: '8px', whiteSpace: 'pre-wrap' } }>
+					varianti: Colore: Nero, Bianco | Memoria: 256 GB, 512 GB
+				</pre>
+				<p>
+					Le varianti sono tutte le combinazioni (qui 4). Valori e nomi non possono contenere <code>|</code> o
+					virgole; al massimo 4 attributi e 50 varianti.
+				</p>
+				<p>
+					<strong>Modo automatico.</strong> Senza quella riga l'assistente prova a ricavare le varianti dal testo
+					libero. È più comodo ma può sbagliare: leggere male un valore, inventarne uno, scambiare una
+					descrizione per una variante. Per questo prima di creare deve mostrarti l'
+					<strong>anteprima</strong> (le varianti che nascerebbero) e aspettare il tuo ok. Controllala sempre.
+				</p>
+			</details>
 
 			<ProdottiInBozza />
 		</div>
