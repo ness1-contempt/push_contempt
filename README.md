@@ -88,6 +88,22 @@ da dargli.
 Nelle tabelle SEO, Contenuti e Salute catalogo la colonna **Tipo e prezzo** mostra il tipo (semplice, variabile,
 raggruppato, esterno) e il prezzo; per variabili e raggruppati è l'intervallo minimo–massimo, mai un numero solo.
 
+## Il tab Blog: articoli scritti dall'assistente AI, sempre in bozza
+
+Il plugin non scrive niente con l'AI: offre all'assistente del cliente (`push_contempt_mcp`) il materiale e un
+posto dove lasciare gli articoli, che nascono **sempre in bozza** (li rivede e li pubblica una persona da wp-admin).
+Non dipende dal settore del negozio: tutto parte dal brief.
+
+- **Brief del blog**: argomento, pubblico, tono, lingua, lunghezza, quanti articoli per volta, categorie di
+  prodotti da far comparire e note libere (per esempio regole AEO/GEO). Salvato nel plugin: l'assistente lo
+  legge da solo, così il messaggio da incollare in chat resta corto.
+- **Messaggio pronto** da copiare nella chat dell'assistente, con le regole che non devono saltare (piano
+  approvato prima di scrivere, niente dati inventati, almeno una fonte, niente immagini generate, mai pubblicare).
+- **Articoli in bozza**: titolo (con link alla modifica), parole, link interni ed esterni e prodotti collegati.
+
+Un titolo già usato da un altro articolo blocca la creazione (niente doppioni se si rilancia la stessa serie), e da
+qui si modificano solo le bozze: un articolo pubblicato si cambia da wp-admin.
+
 ## Il tab SEO: versioni e confronto con i concorrenti
 
 Il tab ha due parti, entrambe con una guida a scomparsa nella pagina stessa.
@@ -226,6 +242,10 @@ Redis vera. In CI è il job `integration`; le versioni di WordPress e WooCommerc
 | `/alt/stato` | GET | tutti i prodotti con le loro immagini e quante hanno l'ALT mancante o senza la parola chiave |
 | `/alt/prodotto` | GET/POST | testo ALT dell'immagine in evidenza, della galleria e (nei variabili) delle varianti; in scrittura rifiuta gli allegati che non sono del prodotto |
 | `/prodotti` | GET | elenco del catalogo con ricerca per titolo: sku, scorte, tipo e prezzo (variabili e raggruppati con intervallo `prezzo_min`/`prezzo_max`) |
+| `/blog/brief` | GET/POST | le indicazioni del negozio per il blog (argomento, pubblico, tono, lingua, lunghezza, articoli per volta, categorie di prodotti, note); POST cambia solo i campi mandati |
+| `/blog/contesto` | GET | negozio, brief, categorie, prodotti più venduti (con indirizzo e immagine) e articoli già presenti: il materiale per scrivere articoli coerenti |
+| `/blog/articoli` | GET/POST | GET: elenco per `stato` (`draft`, `publish`, `any`) e `ricerca`. POST: crea un articolo **in bozza** (titolo, contenuto HTML, categoria, tag, immagine, ALT, SEO Yoast, prodotti collegati); 409 se il titolo esiste già (salvo `consenti_duplicato`) |
+| `/blog/articoli/<id>` | GET/POST | GET: l'articolo per intero. POST: modifica solo i campi mandati, **solo se è una bozza** (409 altrimenti) |
 | `/link/prodotto` | GET | link della descrizione divisi in interni, esterni e altri, con `ha_link_in_uscita` |
 | `/link/prodotti` | GET | riepilogo dei link di tutti i prodotti (`stato`, `solo_senza_link_in_uscita`): totali per prodotto e quanti senza link in uscita |
 | `/prodotti` | POST | crea un prodotto in bozza (titolo, descrizione, prezzo, categoria, immagini, SEO); con `tipo=variable` e `attributi` crea un variabile (una variante per combinazione, prezzo unico, senza scorte); `solo_anteprima` non scrive niente; con `percorso_categoria` (elenco di nomi dalla radice) le categorie mancanti si creano una dentro l'altra e il prodotto va nell'ultima; 409 se un nome di categoria esiste già in un altro punto |

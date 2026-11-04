@@ -1,5 +1,6 @@
 import { TabPanel } from '@wordpress/components';
 import { useState } from '@wordpress/element';
+import BlogTab from './BlogTab';
 import CaricaProdottiTab from './CaricaProdottiTab';
 import ContenutiTab from './ContenutiTab';
 import ImpostazioniTab from './ImpostazioniTab';
@@ -17,6 +18,7 @@ const TABS = [
 	{ name: 'carica-prodotti', title: 'Carica prodotti' },
 	{ name: 'seo', title: 'SEO' },
 	{ name: 'contenuti', title: 'Contenuti' },
+	{ name: 'blog', title: 'Blog' },
 	{ name: 'prezzi', title: 'Prezzi' },
 	{ name: 'scorte', title: 'Scorte' },
 	{ name: 'vendite', title: 'Vendite' },
@@ -31,6 +33,7 @@ const CONTENUTI = {
 	'carica-prodotti': CaricaProdottiTab,
 	seo: SeoStatoTab,
 	contenuti: ContenutiTab,
+	blog: BlogTab,
 	prezzi: PrezziTab,
 	scorte: ScorteTab,
 	vendite: VenditeTab,
