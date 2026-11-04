@@ -214,12 +214,15 @@ class BlogController {
 
 		$prodotti = array();
 		foreach ( wc_get_products( $argomenti ) as $prodotto ) {
-			$prodotti[] = array_merge(
+			$immagine_id = (int) $prodotto->get_image_id();
+			$prodotti[]  = array_merge(
 				array(
-					'id'        => $prodotto->get_id(),
-					'titolo'    => $prodotto->get_name(),
-					'url'       => get_permalink( $prodotto->get_id() ),
-					'categorie' => wp_get_post_terms( $prodotto->get_id(), 'product_cat', array( 'fields' => 'names' ) ),
+					'id'           => $prodotto->get_id(),
+					'titolo'       => $prodotto->get_name(),
+					'url'          => get_permalink( $prodotto->get_id() ),
+					'categorie'    => wp_get_post_terms( $prodotto->get_id(), 'product_cat', array( 'fields' => 'names' ) ),
+					'immagine_id'  => $immagine_id > 0 ? $immagine_id : null,
+					'immagine_url' => $immagine_id > 0 ? wp_get_attachment_url( $immagine_id ) : null,
 				),
 				PrezzoProdotto::di( $prodotto )
 			);
@@ -625,7 +628,7 @@ class BlogController {
 			'id'                 => $articolo->ID,
 			'titolo'             => wp_specialchars_decode( $articolo->post_title, ENT_QUOTES ),
 			'stato'              => $articolo->post_status,
-			'creato'             => mysql2date( 'c', $articolo->post_date_gmt, false ),
+			'creato'             => get_post_datetime( $articolo )->format( 'c' ),
 			'n_parole'           => TestoBlog::conta_parole( $articolo->post_content ),
 			'n_link_interni'     => null === $link ? null : count( $link['interni'] ),
 			'n_link_esterni'     => null === $link ? null : count( $link['esterni'] ),

@@ -87,6 +87,8 @@ class BlogControllerTest extends RestTestCase {
 		$this->assertEqualSets( array( 'trekking', 'zaini' ), wp_get_post_tags( $articolo->ID, array( 'fields' => 'names' ) ) );
 		$this->assertSame( 'zaino trekking', get_post_meta( $articolo->ID, '_yoast_wpseo_focuskw', true ) );
 		$this->assertSame( 11, $dati['n_parole'] );
+		// Una bozza non ha la data GMT: la data non deve diventare 0000-00-00.
+		$this->assertMatchesRegularExpression( '/^' . gmdate( 'Y' ) . '-\d\d-\d\dT/', $dati['creato'] );
 	}
 
 	public function test_riusa_una_categoria_che_esiste_gia(): void {
@@ -251,6 +253,24 @@ class BlogControllerTest extends RestTestCase {
 		$this->assertNotEmpty( $contesto['prodotti'][0]['url'] );
 		$this->assertSame( array( 'Articolo esistente' ), array_column( $contesto['articoli_esistenti'], 'titolo' ) );
 		$this->assertFalse( $contesto['prodotti_limitati'] );
+	}
+
+	public function test_il_contesto_da_l_immagine_del_prodotto_per_riusarla(): void {
+		$senza  = $this->prodotto();
+		$con    = $this->prodotto();
+		$foto   = self::factory()->attachment->create_object(
+			array(
+				'file'           => 'tenda.jpg',
+				'post_mime_type' => 'image/jpeg',
+			)
+		);
+		set_post_thumbnail( $con, $foto );
+
+		$righe = array_column( $this->richiesta( 'GET', '/blog/contesto' )->get_data()['prodotti'], null, 'id' );
+
+		$this->assertNull( $righe[ $senza ]['immagine_id'] );
+		$this->assertSame( $foto, $righe[ $con ]['immagine_id'] );
+		$this->assertStringContainsString( 'tenda.jpg', $righe[ $con ]['immagine_url'] );
 	}
 
 	public function test_il_contesto_limita_i_prodotti_alle_categorie_del_brief(): void {
