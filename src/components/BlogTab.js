@@ -2,6 +2,7 @@ import apiFetch from '@wordpress/api-fetch';
 import {
 	Button,
 	CheckboxControl,
+	ToggleControl,
 	Notice,
 	SelectControl,
 	Spinner,
@@ -155,6 +156,14 @@ function BriefBlog( { onSalvato } ) {
 				</fieldset>
 			) }
 
+			<ToggleControl
+				label="Ottimizza per AEO e GEO"
+				help="Scrittura pensata per motori di risposta e AI come ChatGPT o Perplexity: domande come sottotitoli con risposta breve, elenchi, tabelle e FAQ. Le regole sono nel server MCP."
+				checked={ brief.ottimizza_aeo_geo }
+				onChange={ cambia( 'ottimizza_aeo_geo' ) }
+				__nextHasNoMarginBottom
+			/>
+
 			<TextareaControl
 				label="Note per l'assistente"
 				help="Regole in più: cosa evitare, come citare i prodotti, indicazioni AEO/GEO..."
@@ -259,7 +268,7 @@ export default function BlogTab( { onNavigate } ) {
 			<BriefBlog onSalvato={ setBrief } />
 
 			{ brief && brief.compilato ? (
-				<MessaggioProntoAI testo={ messaggioBlog( brief.n_articoli ) } />
+				<MessaggioProntoAI testo={ messaggioBlog( brief.n_articoli, brief.ottimizza_aeo_geo ) } />
 			) : (
 				brief && <p style={ { color: '#50575e' } }>Scrivi l'argomento e salva il brief per avere il messaggio pronto.</p>
 			) }

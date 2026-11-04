@@ -95,8 +95,10 @@ posto dove lasciare gli articoli, che nascono **sempre in bozza** (li rivede e l
 Non dipende dal settore del negozio: tutto parte dal brief.
 
 - **Brief del blog**: argomento, pubblico, tono, lingua, lunghezza, quanti articoli per volta, categorie di
-  prodotti da far comparire e note libere (per esempio regole AEO/GEO). Salvato nel plugin: l'assistente lo
-  legge da solo, così il messaggio da incollare in chat resta corto.
+  prodotti da far comparire, note libere e l'opzione **Ottimizza per AEO e GEO** (attiva di base): salvato nel
+  plugin, l'assistente lo legge da solo e il messaggio da incollare in chat resta corto. Con l'opzione attiva il
+  server MCP gli consegna le regole di scrittura per motori di risposta e AI generative (le regole stanno nel
+  server, non dipendono da file dell'utente).
 - **Messaggio pronto** da copiare nella chat dell'assistente, con le regole che non devono saltare (piano
   approvato prima di scrivere, niente dati inventati, almeno una fonte, niente immagini generate, mai pubblicare).
 - **Articoli in bozza**: titolo (con link alla modifica), parole, link interni ed esterni e prodotti collegati.

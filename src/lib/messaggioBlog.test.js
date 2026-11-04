@@ -25,4 +25,10 @@ describe( 'messaggioBlog', () => {
 	it( 'salva con crea_articolo_bozza', () => {
 		expect( messaggioBlog( 2 ) ).toContain( 'crea_articolo_bozza' );
 	} );
+
+	it( 'chiede le regole AEO/GEO solo se sono attive nel brief', () => {
+		expect( messaggioBlog( 3, true ) ).toContain( 'regole_aeo_geo' );
+		expect( messaggioBlog( 3 ) ).toContain( 'AEO e GEO' );
+		expect( messaggioBlog( 3, false ) ).not.toContain( 'AEO' );
+	} );
 } );

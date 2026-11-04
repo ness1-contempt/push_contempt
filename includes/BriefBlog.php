@@ -10,8 +10,8 @@ namespace PushContempt;
 /**
  * Il brief e' l'insieme di indicazioni che il negozio da' all'assistente AI prima di
  * scrivere gli articoli: argomento, pubblico, tono, lingua, lunghezza, quanti articoli
- * per volta, quali categorie di prodotti far comparire e note libere (per esempio le
- * regole AEO/GEO). Non dipende dal settore: vale per qualunque negozio.
+ * per volta, quali categorie di prodotti far comparire, note libere e se applicare le
+ * regole AEO/GEO (attivo di base: il testo delle regole sta nel server MCP). Non dipende dal settore: vale per qualunque negozio.
  *
  * Qui c'e' solo la pulizia dei valori; leggere e salvare il brief e' compito del
  * controller REST.
@@ -41,6 +41,7 @@ class BriefBlog {
 			'n_articoli'         => self::ARTICOLI_DEFAULT,
 			'categorie_prodotti' => array(),
 			'note'               => '',
+			'ottimizza_aeo_geo'  => true,
 		);
 	}
 
@@ -75,6 +76,12 @@ class BriefBlog {
 		}
 		if ( isset( $dati['n_articoli'] ) ) {
 			$brief['n_articoli'] = self::intero( $dati['n_articoli'], self::ARTICOLI_MIN, self::ARTICOLI_MAX, self::ARTICOLI_DEFAULT );
+		}
+		if ( isset( $dati['ottimizza_aeo_geo'] ) ) {
+			$scelta = filter_var( $dati['ottimizza_aeo_geo'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+			if ( null !== $scelta ) {
+				$brief['ottimizza_aeo_geo'] = $scelta;
+			}
 		}
 		if ( isset( $dati['categorie_prodotti'] ) && is_array( $dati['categorie_prodotti'] ) ) {
 			$ids = array();

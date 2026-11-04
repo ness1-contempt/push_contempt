@@ -108,4 +108,18 @@ class BriefBlogTest extends TestCase {
 	public function test_solo_spazi_nell_argomento_non_e_compilato(): void {
 		$this->assertFalse( BriefBlog::e_compilato( BriefBlog::pulisci( array( 'argomento' => '   ' ) ) ) );
 	}
+
+	public function test_l_ottimizzazione_aeo_geo_e_attiva_di_base_e_si_puo_spegnere(): void {
+		$this->assertTrue( BriefBlog::predefinito()['ottimizza_aeo_geo'] );
+		$this->assertTrue( BriefBlog::pulisci( array() )['ottimizza_aeo_geo'] );
+		$this->assertFalse( BriefBlog::pulisci( array( 'ottimizza_aeo_geo' => false ) )['ottimizza_aeo_geo'] );
+		$this->assertFalse( BriefBlog::pulisci( array( 'ottimizza_aeo_geo' => 'false' ) )['ottimizza_aeo_geo'] );
+		$this->assertFalse( BriefBlog::pulisci( array( 'ottimizza_aeo_geo' => 0 ) )['ottimizza_aeo_geo'] );
+		$this->assertTrue( BriefBlog::pulisci( array( 'ottimizza_aeo_geo' => 'true' ) )['ottimizza_aeo_geo'] );
+	}
+
+	public function test_un_valore_incomprensibile_non_cambia_l_ottimizzazione(): void {
+		$this->assertTrue( BriefBlog::pulisci( array( 'ottimizza_aeo_geo' => 'boh' ) )['ottimizza_aeo_geo'] );
+		$this->assertTrue( BriefBlog::pulisci( array( 'ottimizza_aeo_geo' => array( 1 ) ) )['ottimizza_aeo_geo'] );
+	}
 }

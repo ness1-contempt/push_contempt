@@ -61,6 +61,19 @@ class BlogControllerTest extends RestTestCase {
 		$this->assertSame( 'Amichevole', $letto['tono'] );
 	}
 
+	public function test_l_ottimizzazione_aeo_geo_parte_attiva_e_si_spegne_dal_brief(): void {
+		$this->assertTrue( $this->richiesta( 'GET', '/blog/brief' )->get_data()['ottimizza_aeo_geo'] );
+
+		$this->richiesta( 'POST', '/blog/brief', array( 'ottimizza_aeo_geo' => false ), true );
+		$this->assertFalse( $this->richiesta( 'GET', '/blog/brief' )->get_data()['ottimizza_aeo_geo'] );
+
+		$this->richiesta( 'POST', '/blog/brief', array( 'argomento' => 'Zaini' ), true );
+		$this->assertFalse( $this->richiesta( 'GET', '/blog/brief' )->get_data()['ottimizza_aeo_geo'], 'salvare un altro campo non la riaccende' );
+
+		$this->richiesta( 'POST', '/blog/brief', array( 'ottimizza_aeo_geo' => true ), true );
+		$this->assertTrue( $this->richiesta( 'GET', '/blog/contesto' )->get_data()['brief']['ottimizza_aeo_geo'] );
+	}
+
 	public function test_un_articolo_nasce_sempre_in_bozza(): void {
 		$risposta = $this->crea(
 			array(
