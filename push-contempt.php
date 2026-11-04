@@ -48,6 +48,7 @@ add_action(
 		\PushContempt\Rest\PubblicaProdottiController::register();
 		\PushContempt\Rest\CategorieController::register();
 		\PushContempt\Rest\OrdiniController::register();
+		\PushContempt\Rest\BlogController::register();
 	}
 );
 
